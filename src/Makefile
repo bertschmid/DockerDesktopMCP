@@ -1,7 +1,7 @@
 IMAGE_NAME      ?= docker-mcp-extension
 VERSION         ?= 1.0.0
 EXTENSION_IMAGE ?= $(IMAGE_NAME):$(VERSION)
-RELEASE_IMAGE   ?= ghcr.io/bertschmid/docker-mcp-extension:$(VERSION)
+RELEASE_IMAGE   ?= docker.io/bertschmid/docker-mcp-extension:$(VERSION)
 PLATFORMS       ?= linux/amd64,linux/arm64
 PORT            ?= 3282
 

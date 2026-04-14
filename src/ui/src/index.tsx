@@ -1,16 +1,25 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import CssBaseline from '@mui/material/CssBaseline';
-import { createTheme, ThemeProvider } from '@mui/material';
+import { createTheme, ThemeProvider, useMediaQuery } from '@mui/material';
 
 import { App } from './App';
 
-const theme = createTheme({
-  palette: { mode: 'light' },
-  typography: {
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-  },
-});
+function ThemedApp() {
+  const prefersDark = useMediaQuery('(prefers-color-scheme: dark)');
+  const theme = createTheme({
+    palette: { mode: prefersDark ? 'dark' : 'light' },
+    typography: {
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    },
+  });
+  return (
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <App />
+    </ThemeProvider>
+  );
+}
 
 class ErrorBoundary extends React.Component<
   { children: React.ReactNode },
@@ -39,10 +48,7 @@ class ErrorBoundary extends React.Component<
 ReactDOM.render(
   <React.StrictMode>
     <ErrorBoundary>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <App />
-      </ThemeProvider>
+      <ThemedApp />
     </ErrorBoundary>
   </React.StrictMode>,
   document.getElementById('root'),

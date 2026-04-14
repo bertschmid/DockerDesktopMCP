@@ -31,7 +31,7 @@ No other tools are required to install or run the extension.
 ### One-liner (pre-built image)
 
 ```bash
-docker extension install ghcr.io/bertschmid/docker-mcp-extension:latest
+docker extension install docker.io/bertschmid/docker-mcp-extension:latest
 ```
 
 ### Build from source
@@ -74,7 +74,7 @@ This still reports the multi-arch publication failure when the image only exists
 For a publish-grade validation:
 
 ```bash
-make validate-release RELEASE_IMAGE=ghcr.io/<owner>/docker-mcp-extension:1.0.0
+make validate-release RELEASE_IMAGE=docker.io/<owner>/docker-mcp-extension:1.0.0
 ```
 
 ### Uninstall
@@ -223,7 +223,7 @@ make tidy
 make validate-local
 
 # Build, push, and validate a release image for linux/amd64 and linux/arm64
-make validate-release RELEASE_IMAGE=ghcr.io/<owner>/docker-mcp-extension:1.0.0
+make validate-release RELEASE_IMAGE=docker.io/<owner>/docker-mcp-extension:1.0.0
 ```
 
 ### Project structure

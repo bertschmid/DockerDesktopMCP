@@ -44,7 +44,7 @@ COPY icon.svg .
 LABEL org.opencontainers.image.title="Docker Desktop MCP Server" \
       org.opencontainers.image.description="HTTP MCP server exposing the full Docker Desktop API to AI assistants." \
       org.opencontainers.image.vendor="bert.schmid@googlemail.com" \
-      org.opencontainers.image.version="1.0.0" \
+      org.opencontainers.image.version="1.0.1" \
       com.docker.desktop.extension.api.version=">= 0.3.3" \
     com.docker.extension.categories="utility-tools" \
       com.docker.desktop.extension.icon="https://raw.githubusercontent.com/bertschmid/DockerDesktopMCP/main/src/icon.svg" \
@@ -52,7 +52,7 @@ LABEL org.opencontainers.image.title="Docker Desktop MCP Server" \
       com.docker.extension.detailed-description="<h1>Docker Desktop MCP Server</h1><p>Starts a local HTTP server implementing the Model Context Protocol (MCP). Connect any MCP-compatible AI assistant (Claude, etc.) to manage containers, images, volumes, networks, and Compose stacks from natural language.</p><h2>Features</h2><ul><li>35 MCP tools covering the full Docker Desktop API</li><li>Configurable port (default: 3282)</li><li>Optional TLS with auto-generated self-signed certificate</li></ul>" \
       com.docker.extension.publisher-url="https://github.com/bertschmid/DockerDesktopMCP" \
     com.docker.extension.additional-urls='[{"title":"Project Repository","url":"https://github.com/bertschmid/DockerDesktopMCP"}]' \
-      com.docker.extension.changelog="<ul><li>Initial release — 35 MCP tools for containers, images, volumes, networks, Compose, and system operations.</li></ul>"
+      com.docker.extension.changelog="<ul><li>v1.0.1 — Dark mode support (follows system preference).</li><li>v1.0.0 — Initial release — 35 MCP tools for containers, images, volumes, networks, Compose, and system operations.</li></ul>"
 
 EXPOSE 3282
 
