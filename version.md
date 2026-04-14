@@ -4,6 +4,17 @@ All notable changes and breaking changes are documented in this file.
 
 ---
 
+## [1.0.6] - 2026-04-14
+
+### Changed
+- **Fixed `docker_container_exec` output:** The exec attach stream is now properly demultiplexed using `stdcopy.StdCopy`, eliminating garbled binary frame headers in the output.
+- **Added `workdir` parameter to `docker_container_exec`:** Callers can now specify the working directory inside the container for the executed command.
+
+### Breaking Changes
+- None.
+
+---
+
 ## [1.0.5] - 2026-04-14
 
 ### Changed

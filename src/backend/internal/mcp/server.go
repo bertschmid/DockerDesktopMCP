@@ -42,7 +42,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.handleMCP(w, r)
 	case "/health":
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, `{"status":"ok","server":"Docker Desktop MCP","version":"1.0.5"}`)
+		fmt.Fprintf(w, `{"status":"ok","server":"Docker Desktop MCP","version":"1.0.6"}`)
 	case "/admin/restart":
 		s.handleRestart(w, r)
 	default:
@@ -169,7 +169,7 @@ func (s *Server) dispatchTool(ctx context.Context, name string, args map[string]
 	case "docker_container_logs":
 		result, err = c.ContainerLogs(ctx, getStr(args, "id", ""), getStr(args, "tail", "100"), getBool(args, "timestamps", false), getStr(args, "since", ""))
 	case "docker_container_exec":
-		result, err = c.ContainerExec(ctx, getStr(args, "id", ""), getStr(args, "command", ""), getStr(args, "user", ""))
+		result, err = c.ContainerExec(ctx, getStr(args, "id", ""), getStr(args, "command", ""), getStr(args, "user", ""), getStr(args, "workdir", ""))
 	case "docker_container_stats":
 		result, err = c.ContainerStats(ctx, getStr(args, "id", ""))
 	case "docker_container_create":
