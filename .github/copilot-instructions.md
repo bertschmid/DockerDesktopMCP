@@ -47,6 +47,7 @@ The following files contain the project version number and **must all be kept in
 | `src/Makefile` | `VERSION ?= <x.y.z>` | Plain string (authoritative source) |
 | `src/ui/package.json` | `"version": "<x.y.z>"` | JSON string (line 3) |
 | `src/backend/internal/mcp/server.go` | health handler `"version":"<x.y.z>"` | JSON string literal in `fmt.Fprintf` |
+| `src/Dockerfile` | `org.opencontainers.image.version="<x.y.z>"` | OCI label in `LABEL` block |
 | `version.md` | `## [<x.y.z>]` heading | Markdown changelog |
 
 > **Update workflow**: Change the version in `src/Makefile` first (authoritative), then propagate to all other files in the table above.
