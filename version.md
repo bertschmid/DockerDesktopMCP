@@ -4,6 +4,16 @@ All notable changes and breaking changes are documented in this file.
 
 ---
 
+## [1.0.5] - 2026-04-14
+
+### Changed
+- Updated Node.js build stage from `node:22-alpine` to `node:24-alpine`.
+
+### Breaking Changes
+- None.
+
+---
+
 ## [1.0.4] - 2026-04-14
 
 ### Changed

@@ -42,7 +42,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.handleMCP(w, r)
 	case "/health":
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, `{"status":"ok","server":"Docker Desktop MCP","version":"1.0.4"}`)
+		fmt.Fprintf(w, `{"status":"ok","server":"Docker Desktop MCP","version":"1.0.5"}`)
 	case "/admin/restart":
 		s.handleRestart(w, r)
 	default:
