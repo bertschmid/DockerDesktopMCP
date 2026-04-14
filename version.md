@@ -4,6 +4,21 @@ All notable changes and breaking changes are documented in this file.
 
 ---
 
+## [1.0.4] - 2026-04-14
+
+### Changed
+- Added **Version Files** section to `.github/copilot-instructions.md`, listing all files that contain the project version number and must be kept in sync on every release.
+- Aligned version number across all version-bearing files to `1.0.4`:
+  - `src/Makefile` (authoritative)
+  - `src/ui/package.json` (was `1.0.2`)
+  - `src/backend/internal/mcp/server.go` health endpoint (was `1.0.0`)
+  - `version.md`
+
+### Breaking Changes
+- None.
+
+---
+
 ## [1.0.3] - 2026-04-14
 
 ### Changed
