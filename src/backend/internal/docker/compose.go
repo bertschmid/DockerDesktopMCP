@@ -7,11 +7,11 @@ import (
 	"os/exec"
 	"strings"
 
-	"docker-mcp/internal/mcp"
+	"docker-mcp/internal/result"
 )
 
 // ComposeUp starts services defined in a docker-compose.yml file.
-func (c *Client) ComposeUp(ctx context.Context, projectDir string, services []string, detach, build, forceRecreate bool) (*mcp.CallToolResult, error) {
+func (c *Client) ComposeUp(ctx context.Context, projectDir string, services []string, detach, build, forceRecreate bool) (*result.CallToolResult, error) {
 	if projectDir == "" {
 		return nil, fmt.Errorf("project_dir is required")
 	}
@@ -30,16 +30,16 @@ func (c *Client) ComposeUp(ctx context.Context, projectDir string, services []st
 
 	out, err := runDockerCLI(ctx, projectDir, args...)
 	if err != nil {
-		return mcp.TextResult(fmt.Sprintf("compose up failed:\n%s", out)), nil
+		return result.Text(fmt.Sprintf("compose up failed:\n%s", out)), nil
 	}
 	if out == "" {
 		out = "Services started successfully"
 	}
-	return mcp.TextResult(out), nil
+	return result.Text(out), nil
 }
 
 // ComposeDown stops and removes containers and networks.
-func (c *Client) ComposeDown(ctx context.Context, projectDir string, volumes, removeOrphans bool) (*mcp.CallToolResult, error) {
+func (c *Client) ComposeDown(ctx context.Context, projectDir string, volumes, removeOrphans bool) (*result.CallToolResult, error) {
 	if projectDir == "" {
 		return nil, fmt.Errorf("project_dir is required")
 	}
@@ -54,29 +54,29 @@ func (c *Client) ComposeDown(ctx context.Context, projectDir string, volumes, re
 
 	out, err := runDockerCLI(ctx, projectDir, args...)
 	if err != nil {
-		return mcp.TextResult(fmt.Sprintf("compose down failed:\n%s", out)), nil
+		return result.Text(fmt.Sprintf("compose down failed:\n%s", out)), nil
 	}
 	if out == "" {
 		out = "Services stopped and removed"
 	}
-	return mcp.TextResult(out), nil
+	return result.Text(out), nil
 }
 
 // ComposePs lists containers for a compose project.
-func (c *Client) ComposePs(ctx context.Context, projectDir string) (*mcp.CallToolResult, error) {
+func (c *Client) ComposePs(ctx context.Context, projectDir string) (*result.CallToolResult, error) {
 	if projectDir == "" {
 		return nil, fmt.Errorf("project_dir is required")
 	}
 
 	out, err := runDockerCLI(ctx, projectDir, "compose", "ps")
 	if err != nil {
-		return mcp.TextResult(fmt.Sprintf("compose ps failed:\n%s", out)), nil
+		return result.Text(fmt.Sprintf("compose ps failed:\n%s", out)), nil
 	}
-	return mcp.TextResult(out), nil
+	return result.Text(out), nil
 }
 
 // ComposeLogs fetches logs from compose services.
-func (c *Client) ComposeLogs(ctx context.Context, projectDir string, services []string, tail string) (*mcp.CallToolResult, error) {
+func (c *Client) ComposeLogs(ctx context.Context, projectDir string, services []string, tail string) (*result.CallToolResult, error) {
 	if projectDir == "" {
 		return nil, fmt.Errorf("project_dir is required")
 	}
@@ -86,13 +86,13 @@ func (c *Client) ComposeLogs(ctx context.Context, projectDir string, services []
 
 	out, err := runDockerCLI(ctx, projectDir, args...)
 	if err != nil {
-		return mcp.TextResult(fmt.Sprintf("compose logs failed:\n%s", out)), nil
+		return result.Text(fmt.Sprintf("compose logs failed:\n%s", out)), nil
 	}
-	return mcp.TextResult(out), nil
+	return result.Text(out), nil
 }
 
 // ComposePull pulls images for all or specified services.
-func (c *Client) ComposePull(ctx context.Context, projectDir string, services []string) (*mcp.CallToolResult, error) {
+func (c *Client) ComposePull(ctx context.Context, projectDir string, services []string) (*result.CallToolResult, error) {
 	if projectDir == "" {
 		return nil, fmt.Errorf("project_dir is required")
 	}
@@ -102,12 +102,12 @@ func (c *Client) ComposePull(ctx context.Context, projectDir string, services []
 
 	out, err := runDockerCLI(ctx, projectDir, args...)
 	if err != nil {
-		return mcp.TextResult(fmt.Sprintf("compose pull failed:\n%s", out)), nil
+		return result.Text(fmt.Sprintf("compose pull failed:\n%s", out)), nil
 	}
 	if out == "" {
 		out = "Images pulled successfully"
 	}
-	return mcp.TextResult(out), nil
+	return result.Text(out), nil
 }
 
 // runDockerCLI executes a docker CLI command in the given working directory.

@@ -6,11 +6,11 @@ import (
 	"fmt"
 
 	"github.com/docker/docker/api/types/volume"
-	"docker-mcp/internal/mcp"
+	"docker-mcp/internal/result"
 )
 
 // VolumeList lists all volumes.
-func (c *Client) VolumeList(ctx context.Context) (*mcp.CallToolResult, error) {
+func (c *Client) VolumeList(ctx context.Context) (*result.CallToolResult, error) {
 	resp, err := c.cli.VolumeList(ctx, volume.ListOptions{})
 	if err != nil {
 		return nil, err
@@ -39,11 +39,11 @@ func (c *Client) VolumeList(ctx context.Context) (*mcp.CallToolResult, error) {
 		"volumes":  rows,
 		"warnings": resp.Warnings,
 	}, "", "  ")
-	return mcp.TextResult(string(out)), nil
+	return result.Text(string(out)), nil
 }
 
 // VolumeCreate creates a new named volume.
-func (c *Client) VolumeCreate(ctx context.Context, name, driver string) (*mcp.CallToolResult, error) {
+func (c *Client) VolumeCreate(ctx context.Context, name, driver string) (*result.CallToolResult, error) {
 	v, err := c.cli.VolumeCreate(ctx, volume.CreateOptions{
 		Name:   name,
 		Driver: driver,
@@ -57,11 +57,11 @@ func (c *Client) VolumeCreate(ctx context.Context, name, driver string) (*mcp.Ca
 		"mountpoint": v.Mountpoint,
 		"created":    v.CreatedAt,
 	}, "", "  ")
-	return mcp.TextResult(string(out)), nil
+	return result.Text(string(out)), nil
 }
 
 // VolumeRemove removes a volume.
-func (c *Client) VolumeRemove(ctx context.Context, name string, force bool) (*mcp.CallToolResult, error) {
+func (c *Client) VolumeRemove(ctx context.Context, name string, force bool) (*result.CallToolResult, error) {
 	if name == "" {
 		return nil, fmt.Errorf("name is required")
 	}
@@ -72,7 +72,7 @@ func (c *Client) VolumeRemove(ctx context.Context, name string, force bool) (*mc
 }
 
 // VolumeInspect returns detailed info about a volume.
-func (c *Client) VolumeInspect(ctx context.Context, name string) (*mcp.CallToolResult, error) {
+func (c *Client) VolumeInspect(ctx context.Context, name string) (*result.CallToolResult, error) {
 	if name == "" {
 		return nil, fmt.Errorf("name is required")
 	}
@@ -81,5 +81,5 @@ func (c *Client) VolumeInspect(ctx context.Context, name string) (*mcp.CallToolR
 		return nil, err
 	}
 	out, _ := json.MarshalIndent(v, "", "  ")
-	return mcp.TextResult(string(out)), nil
+	return result.Text(string(out)), nil
 }

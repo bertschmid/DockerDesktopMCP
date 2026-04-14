@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"time"
 
 	"docker-mcp/internal/docker"
 )
@@ -41,9 +43,32 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case "/health":
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprintf(w, `{"status":"ok","server":"Docker Desktop MCP","version":"1.0.0"}`)
+	case "/admin/restart":
+		s.handleRestart(w, r)
 	default:
 		http.NotFound(w, r)
 	}
+}
+
+func (s *Server) handleRestart(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost && r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(map[string]any{"status": "restarting"}); err != nil {
+		log.Printf("[MCP] restart response encode error: %v", err)
+	}
+	if f, ok := w.(http.Flusher); ok {
+		f.Flush()
+	}
+
+	go func() {
+		log.Println("[MCP] restart requested via API")
+		time.Sleep(1 * time.Second)
+		os.Exit(0)
+	}()
 }
 
 // handleMCP processes all JSON-RPC 2.0 MCP messages.

@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/docker/docker/client"
-	"docker-mcp/internal/mcp"
+	"docker-mcp/internal/result"
 )
 
 // Client wraps the Docker SDK client.
@@ -38,6 +38,6 @@ func (c *Client) Close() error {
 }
 
 // ok returns a simple success result.
-func ok(msg string) (*mcp.CallToolResult, error) {
-	return mcp.TextResult(msg), nil
+func ok(msg string) (*result.CallToolResult, error) {
+	return result.Text(msg), nil
 }

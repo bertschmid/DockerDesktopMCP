@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Button,
@@ -17,11 +17,14 @@ import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import { createDockerDesktopClient } from '@docker/extension-api-client';
+import { createDockerDesktopClient } from './ddClient';
 
-// Docker Desktop client — communicates with the extension backend
-// via Docker Desktop's internal socket proxy (no hardcoded port needed).
+// Docker Desktop client — used for VM service calls when available.
 const ddClient = createDockerDesktopClient();
+
+const BASE_URL = 'http://127.0.0.1:3282';
+const MCP_ENDPOINT = `${BASE_URL}/mcp`;
+const HEALTH_URL = `${BASE_URL}/health`;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -115,25 +118,9 @@ const TOOL_GROUPS: Array<{
 
 const TOTAL_TOOLS = TOOL_GROUPS.reduce((sum, g) => sum + g.tools.length, 0);
 
-// MCP endpoint — the port exposed by the backend service for AI clients.
-const MCP_ENDPOINT = 'http://127.0.0.1:3282/mcp';
-
-const CLIENT_CONFIG = JSON.stringify(
-  {
-    mcpServers: {
-      'docker-desktop': {
-        type: 'http',
-        url: MCP_ENDPOINT,
-      },
-    },
-  },
-  null,
-  2,
-);
-
 // ─── Status Indicator ─────────────────────────────────────────────────────────
 
-function StatusIcon({ status }: { status: ServerStatus }) {
+function StatusIcon({ status }: Readonly<{ status: ServerStatus }>) {
   if (status === 'checking') return <HourglassEmptyIcon color="disabled" />;
   if (status === 'running') return <CheckCircleOutlineIcon color="success" />;
   return <ErrorOutlineIcon color="error" />;
@@ -152,20 +139,65 @@ export function App() {
   const [serverVersion, setServerVersion] = useState<string>('');
   const [copied, setCopied] = useState(false);
 
-  // Health-check via Docker Desktop's internal service proxy
+  const clientConfig = useMemo(
+    () =>
+      JSON.stringify(
+        {
+          mcpServers: {
+            'docker-desktop': {
+              type: 'http',
+              url: MCP_ENDPOINT,
+            },
+          },
+        },
+        null,
+        2,
+      ),
+    [],
+  );
+
+  // Try to fetch health from a URL; returns parsed response or undefined.
+  const fetchHealth = async (url: string): Promise<HealthResponse | undefined> => {
+    try {
+      const resp = await fetch(url);
+      if (!resp.ok) return undefined;
+      const data = (await resp.json()) as HealthResponse;
+      return data.status === 'ok' ? data : undefined;
+    } catch {
+      return undefined;
+    }
+  };
+
+  // Parse a VM proxy result that may be a raw string or already-parsed object.
+  const parseVmResult = (raw: unknown): HealthResponse | undefined => {
+    if (!raw) return undefined;
+    try {
+      const obj: HealthResponse =
+        typeof raw === 'string' ? (JSON.parse(raw) as HealthResponse) : (raw as HealthResponse);
+      return obj.status === 'ok' ? obj : undefined;
+    } catch {
+      return undefined;
+    }
+  };
+
+  // Health-check priority:
+  //   1. Docker Desktop VM proxy (reaches container directly)
+  //   2. Direct fetch on compose default host port (127.0.0.1:3282)
   const checkHealth = useCallback(async () => {
     setStatus('checking');
-    try {
-      const result = (await ddClient.extension.vm?.service?.get(
-        '/health',
-      )) as HealthResponse;
-      if (result?.status === 'ok') {
-        setStatus('running');
-        setServerVersion(result.version ?? '');
-      } else {
-        setStatus('offline');
-      }
-    } catch (_err) {
+    let data: HealthResponse | undefined;
+
+    const vmRaw = await ddClient.extension.vm?.service
+      ?.get('/health')
+      .catch(() => undefined);
+    data = parseVmResult(vmRaw);
+
+    data ??= await fetchHealth(HEALTH_URL);
+
+    if (data?.status === 'ok') {
+      setStatus('running');
+      setServerVersion(data.version ?? '');
+    } else {
       setStatus('offline');
     }
   }, []);
@@ -175,7 +207,7 @@ export function App() {
   }, [checkHealth]);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(CLIENT_CONFIG).then(() => {
+    navigator.clipboard.writeText(clientConfig).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
@@ -263,7 +295,7 @@ export function App() {
                 'Restart the AI client.',
                 'Ask: "Show me all running Docker containers"',
               ].map((step, i) => (
-                <Typography key={i} variant="body2" color="text.secondary">
+                <Typography key={step} variant="body2" color="text.secondary">
                   <strong>{i + 1}.</strong> {step}
                 </Typography>
               ))}
@@ -311,7 +343,7 @@ export function App() {
             whiteSpace: 'pre',
           }}
         >
-          {CLIENT_CONFIG}
+          {clientConfig}
         </Box>
       </Paper>
 

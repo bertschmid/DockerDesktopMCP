@@ -59,13 +59,14 @@ func main() {
 	}
 	defer dockerClient.Close()
 
-	// Verify Docker connection
+	// Verify Docker connection (non-fatal — Docker Desktop may take a moment)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := dockerClient.Ping(ctx); err != nil {
-		log.Fatalf("Cannot connect to Docker daemon: %v", err)
+		log.Printf("Warning: Docker daemon not yet reachable: %v (will retry on first tool call)", err)
+	} else {
+		log.Println("Connected to Docker daemon")
 	}
-	log.Println("Connected to Docker daemon")
 
 	// Create MCP server
 	mcpHandler := mcp.NewServer(dockerClient)

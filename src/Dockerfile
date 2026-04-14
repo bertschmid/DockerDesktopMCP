@@ -1,18 +1,18 @@
 # ── Stage 1: Build the React UI ──────────────────────────────────────────────
-FROM --platform=$BUILDPLATFORM node:18-alpine3.18 AS ui-builder
+FROM --platform=$BUILDPLATFORM public.ecr.aws/docker/library/node:18-alpine3.18 AS ui-builder
 
 WORKDIR /app/ui
 
 # Cache node_modules layer separately from source changes
 # (package-lock.json is optional — npm install creates it on first build)
 COPY ui/package.json ./
-RUN npm install --legacy-peer-deps
+RUN npm install --legacy-peer-deps && npm dedupe --legacy-peer-deps
 
 COPY ui/ .
 RUN npm run build
 
 # ── Stage 2: Build the Go MCP server ─────────────────────────────────────────
-FROM --platform=$BUILDPLATFORM golang:1.22-alpine AS go-builder
+FROM --platform=$BUILDPLATFORM public.ecr.aws/docker/library/golang:1.25-alpine AS go-builder
 
 WORKDIR /src
 RUN apk add --no-cache git ca-certificates
@@ -24,7 +24,7 @@ RUN go mod tidy && \
     go build -ldflags="-s -w" -o /mcp-server ./main.go
 
 # ── Stage 3: Minimal runtime image ───────────────────────────────────────────
-FROM alpine:3.19
+FROM public.ecr.aws/docker/library/alpine:3
 
 # Docker CLI ships with docker compose (needed for Compose tools)
 RUN apk add --no-cache docker-cli ca-certificates
@@ -37,6 +37,8 @@ COPY --from=ui-builder /app/ui/build /ui
 
 # Extension metadata (required at image root)
 COPY metadata.json .
+COPY docker-compose.yaml .
+COPY icon.svg .
 
 # ── Docker Desktop Extension Labels ──────────────────────────────────────────
 LABEL org.opencontainers.image.title="Docker Desktop MCP Server" \
@@ -44,11 +46,12 @@ LABEL org.opencontainers.image.title="Docker Desktop MCP Server" \
       org.opencontainers.image.vendor="bert.schmid@googlemail.com" \
       org.opencontainers.image.version="1.0.0" \
       com.docker.desktop.extension.api.version=">= 0.3.3" \
-      com.docker.desktop.extension.icon="https://www.docker.com/wp-content/uploads/2022/03/Moby-logo.png" \
-      com.docker.extension.screenshots='[{"alt":"Docker MCP Server Dashboard","url":""}]' \
+    com.docker.extension.categories="utility-tools" \
+      com.docker.desktop.extension.icon="https://raw.githubusercontent.com/bertschmid/DockerDesktopMCP/main/src/icon.svg" \
+    com.docker.extension.screenshots='[]' \
       com.docker.extension.detailed-description="<h1>Docker Desktop MCP Server</h1><p>Starts a local HTTP server implementing the Model Context Protocol (MCP). Connect any MCP-compatible AI assistant (Claude, etc.) to manage containers, images, volumes, networks, and Compose stacks from natural language.</p><h2>Features</h2><ul><li>35 MCP tools covering the full Docker Desktop API</li><li>Configurable port (default: 3282)</li><li>Optional TLS with auto-generated self-signed certificate</li></ul>" \
       com.docker.extension.publisher-url="https://github.com/bertschmid/DockerDesktopMCP" \
-      com.docker.extension.additional-urls='[{"title":"MCP Specification","url":"https://spec.modelcontextprotocol.io"}]' \
+    com.docker.extension.additional-urls='[{"title":"Project Repository","url":"https://github.com/bertschmid/DockerDesktopMCP"}]' \
       com.docker.extension.changelog="<ul><li>Initial release — 35 MCP tools for containers, images, volumes, networks, Compose, and system operations.</li></ul>"
 
 EXPOSE 3282

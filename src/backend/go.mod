@@ -1,6 +1,6 @@
 module docker-mcp
 
-go 1.22
+go 1.25
 
 require (
 	github.com/docker/docker v26.1.4+incompatible

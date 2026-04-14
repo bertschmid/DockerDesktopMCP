@@ -7,11 +7,11 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
-	"docker-mcp/internal/mcp"
+	"docker-mcp/internal/result"
 )
 
 // SystemInfo returns system-wide Docker information.
-func (c *Client) SystemInfo(ctx context.Context) (*mcp.CallToolResult, error) {
+func (c *Client) SystemInfo(ctx context.Context) (*result.CallToolResult, error) {
 	info, err := c.cli.Info(ctx)
 	if err != nil {
 		return nil, err
@@ -42,21 +42,21 @@ func (c *Client) SystemInfo(ctx context.Context) (*mcp.CallToolResult, error) {
 	}
 
 	out, _ := json.MarshalIndent(summary, "", "  ")
-	return mcp.TextResult(string(out)), nil
+	return result.Text(string(out)), nil
 }
 
 // SystemVersion returns Docker client and server version details.
-func (c *Client) SystemVersion(ctx context.Context) (*mcp.CallToolResult, error) {
+func (c *Client) SystemVersion(ctx context.Context) (*result.CallToolResult, error) {
 	v, err := c.cli.ServerVersion(ctx)
 	if err != nil {
 		return nil, err
 	}
 	out, _ := json.MarshalIndent(v, "", "  ")
-	return mcp.TextResult(string(out)), nil
+	return result.Text(string(out)), nil
 }
 
 // SystemDf returns disk usage for images, containers, volumes, and build cache.
-func (c *Client) SystemDf(ctx context.Context) (*mcp.CallToolResult, error) {
+func (c *Client) SystemDf(ctx context.Context) (*result.CallToolResult, error) {
 	du, err := c.cli.DiskUsage(ctx, types.DiskUsageOptions{})
 	if err != nil {
 		return nil, err
@@ -109,11 +109,11 @@ func (c *Client) SystemDf(ctx context.Context) (*mcp.CallToolResult, error) {
 	}
 
 	out, _ := json.MarshalIndent(summary, "", "  ")
-	return mcp.TextResult(string(out)), nil
+	return result.Text(string(out)), nil
 }
 
 // SystemPrune removes unused Docker resources.
-func (c *Client) SystemPrune(ctx context.Context, all, pruneVolumes bool) (*mcp.CallToolResult, error) {
+func (c *Client) SystemPrune(ctx context.Context, all, pruneVolumes bool) (*result.CallToolResult, error) {
 	pruneFilters := filters.NewArgs()
 
 	// Prune containers
@@ -140,7 +140,7 @@ func (c *Client) SystemPrune(ctx context.Context, all, pruneVolumes bool) (*mcp.
 		return nil, fmt.Errorf("build cache prune: %w", err)
 	}
 
-	result := map[string]any{
+	summary := map[string]any{
 		"containers_deleted": containerReport.ContainersDeleted,
 		"space_reclaimed_containers": formatBytes(containerReport.SpaceReclaimed),
 		"images_deleted":     len(imageReport.ImagesDeleted),
@@ -156,10 +156,10 @@ func (c *Client) SystemPrune(ctx context.Context, all, pruneVolumes bool) (*mcp.
 		if err != nil {
 			return nil, fmt.Errorf("volume prune: %w", err)
 		}
-		result["volumes_deleted"] = volReport.VolumesDeleted
-		result["space_reclaimed_volumes"] = formatBytes(volReport.SpaceReclaimed)
+		summary["volumes_deleted"] = volReport.VolumesDeleted
+		summary["space_reclaimed_volumes"] = formatBytes(volReport.SpaceReclaimed)
 	}
 
-	out, _ := json.MarshalIndent(result, "", "  ")
-	return mcp.TextResult(string(out)), nil
+	out, _ := json.MarshalIndent(summary, "", "  ")
+	return result.Text(string(out)), nil
 }

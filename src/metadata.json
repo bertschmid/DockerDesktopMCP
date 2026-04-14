@@ -2,6 +2,7 @@
   "vm": {
     "composefile": "docker-compose.yaml"
   },
+  "icon": "icon.svg",
   "ui": {
     "dashboard-tab": {
       "title": "Docker MCP Server",

@@ -2,7 +2,11 @@
 // Spec: https://spec.modelcontextprotocol.io/specification/2025-03-26/
 package mcp
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"docker-mcp/internal/result"
+)
 
 const ProtocolVersion = "2025-03-26"
 
@@ -115,29 +119,22 @@ type CallToolParams struct {
 	Arguments map[string]any `json:"arguments"`
 }
 
-type CallToolResult struct {
-	Content []Content `json:"content"`
-	IsError bool      `json:"isError,omitempty"`
-}
+// CallToolResult is re-exported from the result package for convenience.
+type CallToolResult = result.CallToolResult
 
-type Content struct {
-	Type string `json:"type"` // "text" | "image" | "resource"
-	Text string `json:"text,omitempty"`
-}
+// Content is re-exported from the result package for convenience.
+type Content = result.Content
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 // TextResult creates a successful text tool result.
 func TextResult(text string) *CallToolResult {
-	return &CallToolResult{Content: []Content{{Type: "text", Text: text}}}
+	return result.Text(text)
 }
 
 // errorResult creates an error tool result (package-internal).
 func errorResult(msg string) *CallToolResult {
-	return &CallToolResult{
-		IsError: true,
-		Content: []Content{{Type: "text", Text: msg}},
-	}
+	return result.Error(msg)
 }
 
 func getStr(args map[string]any, key, def string) string {

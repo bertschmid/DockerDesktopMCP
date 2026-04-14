@@ -13,12 +13,12 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/go-connections/nat"
-	"docker-mcp/internal/mcp"
+	"docker-mcp/internal/result"
 )
 
 // ContainerList lists containers.
-func (c *Client) ContainerList(ctx context.Context, all bool) (*mcp.CallToolResult, error) {
-	containers, err := c.cli.ContainerList(ctx, types.ContainerListOptions{All: all})
+func (c *Client) ContainerList(ctx context.Context, all bool) (*result.CallToolResult, error) {
+	containers, err := c.cli.ContainerList(ctx, container.ListOptions{All: all})
 	if err != nil {
 		return nil, err
 	}
@@ -55,11 +55,11 @@ func (c *Client) ContainerList(ctx context.Context, all bool) (*mcp.CallToolResu
 	}
 
 	out, _ := json.MarshalIndent(rows, "", "  ")
-	return mcp.TextResult(string(out)), nil
+	return result.Text(string(out)), nil
 }
 
 // ContainerInspect returns detailed info about a container.
-func (c *Client) ContainerInspect(ctx context.Context, id string) (*mcp.CallToolResult, error) {
+func (c *Client) ContainerInspect(ctx context.Context, id string) (*result.CallToolResult, error) {
 	if id == "" {
 		return nil, fmt.Errorf("id is required")
 	}
@@ -68,22 +68,22 @@ func (c *Client) ContainerInspect(ctx context.Context, id string) (*mcp.CallTool
 		return nil, err
 	}
 	out, _ := json.MarshalIndent(info, "", "  ")
-	return mcp.TextResult(string(out)), nil
+	return result.Text(string(out)), nil
 }
 
 // ContainerStart starts a container.
-func (c *Client) ContainerStart(ctx context.Context, id string) (*mcp.CallToolResult, error) {
+func (c *Client) ContainerStart(ctx context.Context, id string) (*result.CallToolResult, error) {
 	if id == "" {
 		return nil, fmt.Errorf("id is required")
 	}
-	if err := c.cli.ContainerStart(ctx, id, types.ContainerStartOptions{}); err != nil {
+	if err := c.cli.ContainerStart(ctx, id, container.StartOptions{}); err != nil {
 		return nil, err
 	}
 	return ok(fmt.Sprintf("Container %s started", id))
 }
 
 // ContainerStop stops a container.
-func (c *Client) ContainerStop(ctx context.Context, id string, timeout int) (*mcp.CallToolResult, error) {
+func (c *Client) ContainerStop(ctx context.Context, id string, timeout int) (*result.CallToolResult, error) {
 	if id == "" {
 		return nil, fmt.Errorf("id is required")
 	}
@@ -95,7 +95,7 @@ func (c *Client) ContainerStop(ctx context.Context, id string, timeout int) (*mc
 }
 
 // ContainerRestart restarts a container.
-func (c *Client) ContainerRestart(ctx context.Context, id string, timeout int) (*mcp.CallToolResult, error) {
+func (c *Client) ContainerRestart(ctx context.Context, id string, timeout int) (*result.CallToolResult, error) {
 	if id == "" {
 		return nil, fmt.Errorf("id is required")
 	}
@@ -107,11 +107,11 @@ func (c *Client) ContainerRestart(ctx context.Context, id string, timeout int) (
 }
 
 // ContainerRemove removes a container.
-func (c *Client) ContainerRemove(ctx context.Context, id string, force, removeVolumes bool) (*mcp.CallToolResult, error) {
+func (c *Client) ContainerRemove(ctx context.Context, id string, force, removeVolumes bool) (*result.CallToolResult, error) {
 	if id == "" {
 		return nil, fmt.Errorf("id is required")
 	}
-	err := c.cli.ContainerRemove(ctx, id, types.ContainerRemoveOptions{
+	err := c.cli.ContainerRemove(ctx, id, container.RemoveOptions{
 		Force:         force,
 		RemoveVolumes: removeVolumes,
 	})
@@ -122,11 +122,11 @@ func (c *Client) ContainerRemove(ctx context.Context, id string, force, removeVo
 }
 
 // ContainerLogs returns logs for a container.
-func (c *Client) ContainerLogs(ctx context.Context, id, tail string, timestamps bool, since string) (*mcp.CallToolResult, error) {
+func (c *Client) ContainerLogs(ctx context.Context, id, tail string, timestamps bool, since string) (*result.CallToolResult, error) {
 	if id == "" {
 		return nil, fmt.Errorf("id is required")
 	}
-	opts := types.ContainerLogsOptions{
+	opts := container.LogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
 		Tail:       tail,
@@ -156,11 +156,11 @@ func (c *Client) ContainerLogs(ctx context.Context, id, tail string, timestamps 
 		buf.Write(raw[i : i+size])
 		i += size
 	}
-	return mcp.TextResult(buf.String()), nil
+	return result.Text(buf.String()), nil
 }
 
 // ContainerExec runs a command in a container and returns stdout+stderr.
-func (c *Client) ContainerExec(ctx context.Context, id, command, user string) (*mcp.CallToolResult, error) {
+func (c *Client) ContainerExec(ctx context.Context, id, command, user string) (*result.CallToolResult, error) {
 	if id == "" {
 		return nil, fmt.Errorf("id is required")
 	}
@@ -196,15 +196,15 @@ func (c *Client) ContainerExec(ctx context.Context, id, command, user string) (*
 
 	// Get exit code
 	inspect, _ := c.cli.ContainerExecInspect(ctx, execID.ID)
-	result := buf.String()
+	output := buf.String()
 	if inspect.ExitCode != 0 {
-		return mcp.TextResult(fmt.Sprintf("exit code %d\n%s", inspect.ExitCode, result)), nil
+		return result.Text(fmt.Sprintf("exit code %d\n%s", inspect.ExitCode, output)), nil
 	}
-	return mcp.TextResult(result), nil
+	return result.Text(output), nil
 }
 
 // ContainerStats returns current resource usage for a container.
-func (c *Client) ContainerStats(ctx context.Context, id string) (*mcp.CallToolResult, error) {
+func (c *Client) ContainerStats(ctx context.Context, id string) (*result.CallToolResult, error) {
 	if id == "" {
 		return nil, fmt.Errorf("id is required")
 	}
@@ -257,11 +257,11 @@ func (c *Client) ContainerStats(ctx context.Context, id string) (*mcp.CallToolRe
 	}
 
 	out, _ := json.MarshalIndent(summary, "", "  ")
-	return mcp.TextResult(string(out)), nil
+	return result.Text(string(out)), nil
 }
 
 // ContainerCreate creates a new container without starting it.
-func (c *Client) ContainerCreate(ctx context.Context, args map[string]any) (*mcp.CallToolResult, error) {
+func (c *Client) ContainerCreate(ctx context.Context, args map[string]any) (*result.CallToolResult, error) {
 	image := getStr(args, "image", "")
 	if image == "" {
 		return nil, fmt.Errorf("image is required")
@@ -316,7 +316,7 @@ func (c *Client) ContainerCreate(ctx context.Context, args map[string]any) (*mcp
 		"id":       resp.ID[:12],
 		"warnings": resp.Warnings,
 	}, "", "  ")
-	return mcp.TextResult(string(out)), nil
+	return result.Text(string(out)), nil
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

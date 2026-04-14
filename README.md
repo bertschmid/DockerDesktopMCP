@@ -59,6 +59,22 @@ After installation the MCP server starts automatically and is reachable at:
 make update
 ```
 
+### Validate before publishing
+
+Docker Desktop's publication checks expect a pushed multi-arch image for both `linux/amd64` and `linux/arm64`.
+
+For a local development check:
+
+```bash
+make validate-local
+```
+
+For a publish-grade validation:
+
+```bash
+make validate-release RELEASE_IMAGE=ghcr.io/<owner>/docker-mcp-extension:1.0.0
+```
+
 ### Uninstall
 
 ```bash
@@ -201,8 +217,11 @@ make test
 # Tidy Go module dependencies
 make tidy
 
-# Validate the extension image against Docker Desktop requirements
-make validate
+# Validate the local single-arch image
+make validate-local
+
+# Build, push, and validate a release image for linux/amd64 and linux/arm64
+make validate-release RELEASE_IMAGE=ghcr.io/<owner>/docker-mcp-extension:1.0.0
 ```
 
 ### Project structure

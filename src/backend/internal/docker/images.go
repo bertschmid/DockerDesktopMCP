@@ -13,11 +13,11 @@ import (
 	"time"
 
 	"github.com/docker/docker/api/types"
-	"docker-mcp/internal/mcp"
+	"docker-mcp/internal/result"
 )
 
 // ImageList lists local images.
-func (c *Client) ImageList(ctx context.Context, all bool) (*mcp.CallToolResult, error) {
+func (c *Client) ImageList(ctx context.Context, all bool) (*result.CallToolResult, error) {
 	images, err := c.cli.ImageList(ctx, types.ImageListOptions{All: all})
 	if err != nil {
 		return nil, err
@@ -58,11 +58,11 @@ func (c *Client) ImageList(ctx context.Context, all bool) (*mcp.CallToolResult, 
 	}
 
 	out, _ := json.MarshalIndent(rows, "", "  ")
-	return mcp.TextResult(string(out)), nil
+	return result.Text(string(out)), nil
 }
 
 // ImagePull pulls an image from a registry.
-func (c *Client) ImagePull(ctx context.Context, ref, platform string) (*mcp.CallToolResult, error) {
+func (c *Client) ImagePull(ctx context.Context, ref, platform string) (*result.CallToolResult, error) {
 	if ref == "" {
 		return nil, fmt.Errorf("image is required")
 	}
@@ -100,11 +100,11 @@ func (c *Client) ImagePull(ctx context.Context, ref, platform string) (*mcp.Call
 		}
 	}
 
-	return mcp.TextResult(fmt.Sprintf("Pulled %s\n%s", ref, sb.String())), nil
+	return result.Text(fmt.Sprintf("Pulled %s\n%s", ref, sb.String())), nil
 }
 
 // ImageRemove removes an image.
-func (c *Client) ImageRemove(ctx context.Context, ref string, force bool) (*mcp.CallToolResult, error) {
+func (c *Client) ImageRemove(ctx context.Context, ref string, force bool) (*result.CallToolResult, error) {
 	if ref == "" {
 		return nil, fmt.Errorf("image is required")
 	}
@@ -126,11 +126,11 @@ func (c *Client) ImageRemove(ctx context.Context, ref string, force bool) (*mcp.
 		rows = append(rows, item{Untagged: i.Untagged, Deleted: i.Deleted})
 	}
 	out, _ := json.MarshalIndent(rows, "", "  ")
-	return mcp.TextResult(string(out)), nil
+	return result.Text(string(out)), nil
 }
 
 // ImageInspect returns detailed info about an image.
-func (c *Client) ImageInspect(ctx context.Context, ref string) (*mcp.CallToolResult, error) {
+func (c *Client) ImageInspect(ctx context.Context, ref string) (*result.CallToolResult, error) {
 	if ref == "" {
 		return nil, fmt.Errorf("image is required")
 	}
@@ -139,11 +139,11 @@ func (c *Client) ImageInspect(ctx context.Context, ref string) (*mcp.CallToolRes
 		return nil, err
 	}
 	out, _ := json.MarshalIndent(info, "", "  ")
-	return mcp.TextResult(string(out)), nil
+	return result.Text(string(out)), nil
 }
 
 // ImageTag creates a new tag for an existing image.
-func (c *Client) ImageTag(ctx context.Context, source, target string) (*mcp.CallToolResult, error) {
+func (c *Client) ImageTag(ctx context.Context, source, target string) (*result.CallToolResult, error) {
 	if source == "" || target == "" {
 		return nil, fmt.Errorf("source and target are required")
 	}
@@ -154,7 +154,7 @@ func (c *Client) ImageTag(ctx context.Context, source, target string) (*mcp.Call
 }
 
 // ImageBuild builds an image from a Dockerfile context directory.
-func (c *Client) ImageBuild(ctx context.Context, args map[string]any) (*mcp.CallToolResult, error) {
+func (c *Client) ImageBuild(ctx context.Context, args map[string]any) (*result.CallToolResult, error) {
 	contextPath := getStr(args, "context_path", "")
 	if contextPath == "" {
 		return nil, fmt.Errorf("context_path is required")
@@ -196,13 +196,13 @@ func (c *Client) ImageBuild(ctx context.Context, args map[string]any) (*mcp.Call
 		}
 		if err := json.Unmarshal(scanner.Bytes(), &event); err == nil {
 			if event.Error != "" {
-				return mcp.TextResult("Build failed: " + event.Error), nil
+				return result.Text("Build failed: " + event.Error), nil
 			}
 			sb.WriteString(event.Stream)
 		}
 	}
 
-	return mcp.TextResult(sb.String()), nil
+	return result.Text(sb.String()), nil
 }
 
 // ─── Build Context Helpers ────────────────────────────────────────────────────

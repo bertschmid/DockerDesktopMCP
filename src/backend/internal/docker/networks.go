@@ -7,11 +7,11 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/network"
-	"docker-mcp/internal/mcp"
+	"docker-mcp/internal/result"
 )
 
 // NetworkList lists all Docker networks.
-func (c *Client) NetworkList(ctx context.Context) (*mcp.CallToolResult, error) {
+func (c *Client) NetworkList(ctx context.Context) (*result.CallToolResult, error) {
 	networks, err := c.cli.NetworkList(ctx, types.NetworkListOptions{})
 	if err != nil {
 		return nil, err
@@ -41,11 +41,11 @@ func (c *Client) NetworkList(ctx context.Context) (*mcp.CallToolResult, error) {
 	}
 
 	out, _ := json.MarshalIndent(rows, "", "  ")
-	return mcp.TextResult(string(out)), nil
+	return result.Text(string(out)), nil
 }
 
 // NetworkCreate creates a new Docker network.
-func (c *Client) NetworkCreate(ctx context.Context, name, driver, subnet string) (*mcp.CallToolResult, error) {
+func (c *Client) NetworkCreate(ctx context.Context, name, driver, subnet string) (*result.CallToolResult, error) {
 	if name == "" {
 		return nil, fmt.Errorf("name is required")
 	}
@@ -71,11 +71,11 @@ func (c *Client) NetworkCreate(ctx context.Context, name, driver, subnet string)
 		"id":      resp.ID[:12],
 		"warning": resp.Warning,
 	}, "", "  ")
-	return mcp.TextResult(string(out)), nil
+	return result.Text(string(out)), nil
 }
 
 // NetworkRemove removes a network.
-func (c *Client) NetworkRemove(ctx context.Context, name string) (*mcp.CallToolResult, error) {
+func (c *Client) NetworkRemove(ctx context.Context, name string) (*result.CallToolResult, error) {
 	if name == "" {
 		return nil, fmt.Errorf("name is required")
 	}
@@ -86,7 +86,7 @@ func (c *Client) NetworkRemove(ctx context.Context, name string) (*mcp.CallToolR
 }
 
 // NetworkInspect returns detailed info about a network.
-func (c *Client) NetworkInspect(ctx context.Context, name string) (*mcp.CallToolResult, error) {
+func (c *Client) NetworkInspect(ctx context.Context, name string) (*result.CallToolResult, error) {
 	if name == "" {
 		return nil, fmt.Errorf("name is required")
 	}
@@ -95,11 +95,11 @@ func (c *Client) NetworkInspect(ctx context.Context, name string) (*mcp.CallTool
 		return nil, err
 	}
 	out, _ := json.MarshalIndent(n, "", "  ")
-	return mcp.TextResult(string(out)), nil
+	return result.Text(string(out)), nil
 }
 
 // NetworkConnect connects a container to a network.
-func (c *Client) NetworkConnect(ctx context.Context, networkName, containerID string) (*mcp.CallToolResult, error) {
+func (c *Client) NetworkConnect(ctx context.Context, networkName, containerID string) (*result.CallToolResult, error) {
 	if networkName == "" || containerID == "" {
 		return nil, fmt.Errorf("network and container are required")
 	}
@@ -110,7 +110,7 @@ func (c *Client) NetworkConnect(ctx context.Context, networkName, containerID st
 }
 
 // NetworkDisconnect disconnects a container from a network.
-func (c *Client) NetworkDisconnect(ctx context.Context, networkName, containerID string, force bool) (*mcp.CallToolResult, error) {
+func (c *Client) NetworkDisconnect(ctx context.Context, networkName, containerID string, force bool) (*result.CallToolResult, error) {
 	if networkName == "" || containerID == "" {
 		return nil, fmt.Errorf("network and container are required")
 	}
