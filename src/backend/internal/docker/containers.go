@@ -199,7 +199,7 @@ func (c *Client) ContainerExec(ctx context.Context, id, command, user, workdir s
 	// headers; stdcopy.StdCopy demultiplexes them correctly.
 	var stdout, stderr bytes.Buffer
 	if _, err := stdcopy.StdCopy(&stdout, &stderr, resp.Reader); err != nil && err != io.EOF {
-		return nil, fmt.Errorf("exec read: %w", err)
+		return nil, fmt.Errorf("failed to demultiplex exec output: %w", err)
 	}
 
 	// Get exit code
