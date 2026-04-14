@@ -1,0 +1,18 @@
+# Node modules — never commit these
+node_modules/
+
+# Vite build output
+dist/
+
+# Vite cache
+.vite/
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Local environment files
+.env.local
+.env.*.local
+
+# Editor directories and files
+.DS_Store

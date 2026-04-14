@@ -4,6 +4,34 @@ All notable changes and breaking changes are documented in this file.
 
 ---
 
+## [1.0.2] - 2026-04-14
+
+### Changed
+- **UI build tool migrated from Create React App (`react-scripts`) to Vite 8.**
+  Create React App is deprecated and produced build warnings; Vite provides a modern, warning-free build.
+- **All UI npm dependencies updated to latest versions:**
+  - `react` / `react-dom`: 17 → 19
+  - `@mui/material` / `@mui/icons-material`: v5 → v9
+  - `@emotion/react` / `@emotion/styled`: 11.11.x → 11.14.x
+  - `typescript`: 4.9 → 6.0
+  - `@types/react` / `@types/react-dom`: 17 → 19
+  - Removed `react-scripts`, `ajv` (no longer needed with Vite)
+  - Added `vite`, `@vitejs/plugin-react`
+- **Docker builder image upgraded:** Node 18 (EOL) → Node 22 LTS.
+- **UI build output directory changed:** `build/` → `dist/` (Vite default).
+- **React 19 API:** `ReactDOM.render` replaced with `createRoot` in `index.tsx`.
+- **MUI v9 breaking changes resolved in `App.tsx`:**
+  - `Grid` `item`/`xs`/`md` props replaced with `size={{ xs, md }}` (new Grid2-style API).
+  - `Typography paragraph` prop replaced with `sx={{ mb: 2 }}` (removed in v9).
+  - Icon renames: `CheckCircleOutline` → `CheckCircleOutlined`, `ErrorOutline` → `ErrorOutlined`.
+- Added `.gitignore` files to prevent accidental `node_modules` commits.
+- Removed `--legacy-peer-deps` flag from npm install (no longer needed).
+
+### Breaking Changes
+- None for end users. The extension behaviour is identical.
+
+---
+
 ## [1.0.1] - 2026-04-14
 
 ### Changed
