@@ -47,7 +47,7 @@ LABEL org.opencontainers.image.title="Docker Desktop MCP Server" \
       com.docker.desktop.extension.icon="https://www.docker.com/wp-content/uploads/2022/03/Moby-logo.png" \
       com.docker.extension.screenshots='[{"alt":"Docker MCP Server Dashboard","url":""}]' \
       com.docker.extension.detailed-description="<h1>Docker Desktop MCP Server</h1><p>Starts a local HTTP server implementing the Model Context Protocol (MCP). Connect any MCP-compatible AI assistant (Claude, etc.) to manage containers, images, volumes, networks, and Compose stacks from natural language.</p><h2>Features</h2><ul><li>35 MCP tools covering the full Docker Desktop API</li><li>Configurable port (default: 3282)</li><li>Optional TLS with auto-generated self-signed certificate</li></ul>" \
-      com.docker.extension.publisher-url="https://github.com/bert-schmid" \
+      com.docker.extension.publisher-url="https://github.com/bertschmid/DockerDesktopMCP" \
       com.docker.extension.additional-urls='[{"title":"MCP Specification","url":"https://spec.modelcontextprotocol.io"}]' \
       com.docker.extension.changelog="<ul><li>Initial release — 35 MCP tools for containers, images, volumes, networks, Compose, and system operations.</li></ul>"
 
