@@ -8,8 +8,6 @@
 
 - **35 MCP tools** covering the full Docker Desktop API
 - Works as a **Docker Desktop Extension** — install in one command
-- Configurable port (default: **3282**)
-- Optional **TLS** with auto-generated self-signed certificate
 - Dashboard tab in Docker Desktop UI
 - Health endpoint at `/health`
 
