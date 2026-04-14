@@ -114,6 +114,7 @@ func (s *Server) registerTools() {
 					"id":      {Type: "string", Description: "Container ID or name"},
 					"command": {Type: "string", Description: "Command to execute"},
 					"user":    {Type: "string", Description: "User to run the command as (optional)"},
+					"workdir": {Type: "string", Description: "Working directory inside the container (optional)"},
 				},
 				Required: []string{"id", "command"},
 			},

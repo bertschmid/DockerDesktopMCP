@@ -12,6 +12,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/network"
+	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/docker/go-connections/nat"
 	"docker-mcp/internal/result"
 )
@@ -160,7 +161,7 @@ func (c *Client) ContainerLogs(ctx context.Context, id, tail string, timestamps 
 }
 
 // ContainerExec runs a command in a container and returns stdout+stderr.
-func (c *Client) ContainerExec(ctx context.Context, id, command, user string) (*result.CallToolResult, error) {
+func (c *Client) ContainerExec(ctx context.Context, id, command, user, workdir string) (*result.CallToolResult, error) {
 	if id == "" {
 		return nil, fmt.Errorf("id is required")
 	}
@@ -179,6 +180,9 @@ func (c *Client) ContainerExec(ctx context.Context, id, command, user string) (*
 	if user != "" {
 		execConfig.User = user
 	}
+	if workdir != "" {
+		execConfig.WorkingDir = workdir
+	}
 
 	execID, err := c.cli.ContainerExecCreate(ctx, id, execConfig)
 	if err != nil {
@@ -191,16 +195,27 @@ func (c *Client) ContainerExec(ctx context.Context, id, command, user string) (*
 	}
 	defer resp.Close()
 
-	var buf bytes.Buffer
-	io.Copy(&buf, resp.Reader)
+	// Docker multiplexes stdout and stderr into a single stream with 8-byte frame
+	// headers; stdcopy.StdCopy demultiplexes them correctly.
+	var stdout, stderr bytes.Buffer
+	if _, err := stdcopy.StdCopy(&stdout, &stderr, resp.Reader); err != nil && err != io.EOF {
+		return nil, fmt.Errorf("failed to demultiplex exec output: %w", err)
+	}
 
 	// Get exit code
 	inspect, _ := c.cli.ContainerExecInspect(ctx, execID.ID)
-	output := buf.String()
-	if inspect.ExitCode != 0 {
-		return result.Text(fmt.Sprintf("exit code %d\n%s", inspect.ExitCode, output)), nil
+
+	var out strings.Builder
+	if stdout.Len() > 0 {
+		out.WriteString(stdout.String())
 	}
-	return result.Text(output), nil
+	if stderr.Len() > 0 {
+		out.WriteString(stderr.String())
+	}
+	if inspect.ExitCode != 0 {
+		return result.Text(fmt.Sprintf("exit code %d\n%s", inspect.ExitCode, out.String())), nil
+	}
+	return result.Text(out.String()), nil
 }
 
 // ContainerStats returns current resource usage for a container.
