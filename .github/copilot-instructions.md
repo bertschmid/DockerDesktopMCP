@@ -71,6 +71,16 @@ All commands are run from the `src/` directory:
 - Keep `README.md` and `version.md` in sync with any user-facing changes.
 - The Docker image must support both `linux/amd64` and `linux/arm64` platforms.
 
+## Agent Workflow
+
+Every agent must follow this workflow for every task:
+
+1. **Analyse** – Read and fully understand the prompt. Build a comprehensive picture of what is required before taking any action.
+2. **Plan** – Create a step-by-step plan that leads to the goal. Each step must be self-contained and verifiable.
+3. **Execute** – Run each step in its own dedicated sub-agent. A sub-agent **must not** start further sub-agents.
+4. **Verify** – After each sub-agent completes, check the result. If the result is correct, continue to the next step. If not, repeat the step with adjustments derived from the review, until the result is acceptable.
+5. **Version** – The plan always ends with updating `version.md` (and `src/Makefile`) to reflect the new version, documenting what changed.
+
 ## MCP Tool Categories
 
 | Category | Count | Prefix |

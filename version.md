@@ -4,6 +4,17 @@ All notable changes and breaking changes are documented in this file.
 
 ---
 
+## [1.0.3] - 2026-04-14
+
+### Changed
+- Added **Agent Workflow** section to `.github/copilot-instructions.md`.
+  Every agent must now follow a five-step process: Analyse → Plan → Execute (sub-agents, no nesting) → Verify (repeat if needed) → Version.
+
+### Breaking Changes
+- None.
+
+---
+
 ## [1.0.2] - 2026-04-14
 
 ### Changed
