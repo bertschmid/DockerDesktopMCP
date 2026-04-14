@@ -1,5 +1,5 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import CssBaseline from '@mui/material/CssBaseline';
 import { createTheme, ThemeProvider, useMediaQuery } from '@mui/material';
 
@@ -45,11 +45,11 @@ class ErrorBoundary extends React.Component<
   }
 }
 
-ReactDOM.render(
+createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ErrorBoundary>
       <ThemedApp />
     </ErrorBoundary>
   </React.StrictMode>,
-  document.getElementById('root'),
 );
+

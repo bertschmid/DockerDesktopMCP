@@ -1,0 +1,16 @@
+# Node modules — never commit these
+node_modules/
+
+# Vite / CRA build outputs
+dist/
+build/
+
+# TypeScript build info
+*.tsbuildinfo
+
+# OS metadata
+.DS_Store
+
+# Local environment files
+.env.local
+.env.*.local

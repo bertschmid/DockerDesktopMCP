@@ -1,12 +1,11 @@
 # ── Stage 1: Build the React UI ──────────────────────────────────────────────
-FROM --platform=$BUILDPLATFORM public.ecr.aws/docker/library/node:18-alpine3.18 AS ui-builder
+FROM --platform=$BUILDPLATFORM public.ecr.aws/docker/library/node:22-alpine AS ui-builder
 
 WORKDIR /app/ui
 
 # Cache node_modules layer separately from source changes
-# (package-lock.json is optional — npm install creates it on first build)
 COPY ui/package.json ./
-RUN npm install --legacy-peer-deps && npm dedupe --legacy-peer-deps
+RUN npm install && npm dedupe
 
 COPY ui/ .
 RUN npm run build
@@ -33,7 +32,7 @@ RUN apk add --no-cache docker-cli ca-certificates
 COPY --from=go-builder /mcp-server /mcp-server
 
 # React UI — served by Docker Desktop from /ui in the container filesystem
-COPY --from=ui-builder /app/ui/build /ui
+COPY --from=ui-builder /app/ui/dist /ui
 
 # Extension metadata (required at image root)
 COPY metadata.json .
@@ -44,7 +43,7 @@ COPY icon.svg .
 LABEL org.opencontainers.image.title="Docker Desktop MCP Server" \
       org.opencontainers.image.description="HTTP MCP server exposing the full Docker Desktop API to AI assistants." \
       org.opencontainers.image.vendor="bert.schmid@googlemail.com" \
-      org.opencontainers.image.version="1.0.1" \
+      org.opencontainers.image.version="1.0.2" \
       com.docker.desktop.extension.api.version=">= 0.3.3" \
     com.docker.extension.categories="utility-tools" \
       com.docker.desktop.extension.icon="https://raw.githubusercontent.com/bertschmid/DockerDesktopMCP/main/src/icon.svg" \

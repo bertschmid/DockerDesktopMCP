@@ -12,8 +12,8 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlined';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutlined';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import RefreshIcon from '@mui/icons-material/Refresh';
@@ -228,7 +228,7 @@ export function App() {
 
       <Grid container spacing={2}>
         {/* ── Server Status ─────────────────────────────────────────── */}
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Paper variant="outlined" sx={{ p: 2, height: '100%' }}>
             <Stack
               direction="row"
@@ -283,7 +283,7 @@ export function App() {
         </Grid>
 
         {/* ── Quick Start ───────────────────────────────────────────── */}
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Paper variant="outlined" sx={{ p: 2, height: '100%' }}>
             <Typography variant="subtitle1" fontWeight={600} gutterBottom>
               Quick Start
@@ -326,7 +326,7 @@ export function App() {
             </Button>
           </Tooltip>
         </Stack>
-        <Typography variant="body2" color="text.secondary" paragraph>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Add this JSON to your AI client's MCP server configuration file
           (e.g. <code>claude_desktop_config.json</code> for Claude Desktop):
         </Typography>
@@ -352,7 +352,7 @@ export function App() {
         <Typography variant="subtitle1" fontWeight={600} gutterBottom>
           Available Tools ({TOTAL_TOOLS})
         </Typography>
-        <Typography variant="body2" color="text.secondary" paragraph>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Each tool maps to a Docker operation callable by the AI assistant.
         </Typography>
 

@@ -1,5 +1,5 @@
 IMAGE_NAME      ?= docker-mcp-extension
-VERSION         ?= 1.0.1
+VERSION         ?= 1.0.2
 EXTENSION_IMAGE ?= $(IMAGE_NAME):$(VERSION)
 RELEASE_IMAGE   ?= docker.io/bertschmid/docker-mcp-extension:$(VERSION)
 PLATFORMS       ?= linux/amd64,linux/arm64
@@ -13,7 +13,7 @@ help: ## Show this help
 # ── UI ────────────────────────────────────────────────────────────────────────
 
 ui-install: ## Install React UI dependencies
-	cd ui && npm install --legacy-peer-deps
+	cd ui && npm install
 
 ui-build: ui-install ## Build the React UI
 	cd ui && npm run build
