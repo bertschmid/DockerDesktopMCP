@@ -181,22 +181,6 @@ Configure your MCP client to use the HTTP transport:
 
 ---
 
-## Configuration
-
-The server reads configuration from environment variables or CLI flags.
-
-| Environment variable | CLI flag | Default | Description |
-|---|---|---|---|
-| `MCP_PORT` | `--port` | `3282` | Port the server listens on |
-| `MCP_HOST` | `--host` | `127.0.0.1` | Interface to bind to |
-| `MCP_TLS` | `--tls` | `false` | Enable HTTPS |
-| `MCP_CERT` | `--cert` | *(auto-generate)* | Path to TLS certificate file |
-| `MCP_KEY` | `--key` | *(auto-generate)* | Path to TLS private key file |
-
-When TLS is enabled without providing `cert`/`key` files, a self-signed certificate is generated automatically in memory.
-
----
-
 ## Development
 
 All commands are run from the `src/` directory.
