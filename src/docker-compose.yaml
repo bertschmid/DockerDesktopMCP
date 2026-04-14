@@ -1,0 +1,17 @@
+services:
+  mcp-server:
+    image: ${DESKTOP_PLUGIN_IMAGE}
+    command:
+      - /mcp-server
+      - --port=${MCP_PORT:-3282}
+      - --host=0.0.0.0
+    environment:
+      MCP_PORT: ${MCP_PORT:-3282}
+      MCP_TLS: ${MCP_TLS:-false}
+      MCP_CERT: ${MCP_CERT:-}
+      MCP_KEY: ${MCP_KEY:-}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "127.0.0.1:${MCP_PORT:-3282}:${MCP_PORT:-3282}"
+    restart: unless-stopped
