@@ -38,6 +38,19 @@ DockerDesktopMCP/
 - For major API/architecture overhauls, increment the **major** version.
 - Always update `version.md` in the root folder when changing the version, documenting what changed and any breaking changes.
 
+## Version Files
+
+The following files contain the project version number and **must all be kept in sync** on every release:
+
+| File | Location of version | Format |
+|---|---|---|
+| `src/Makefile` | `VERSION ?= <x.y.z>` | Plain string (authoritative source) |
+| `src/ui/package.json` | `"version": "<x.y.z>"` | JSON string (line 3) |
+| `src/backend/internal/mcp/server.go` | health handler `"version":"<x.y.z>"` | JSON string literal in `fmt.Fprintf` |
+| `version.md` | `## [<x.y.z>]` heading | Markdown changelog |
+
+> **Update workflow**: Change the version in `src/Makefile` first (authoritative), then propagate to all other files in the table above.
+
 ## Build & Development Commands
 
 All commands are run from the `src/` directory:
