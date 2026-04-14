@@ -35,7 +35,7 @@ update: build ## Update an already-installed extension
 uninstall: ## Uninstall the extension from Docker Desktop
 	docker extension uninstall $(EXTENSION_IMAGE)
 
-validate-local: build ## Validate a local single-arch image (useful during development)
+validate-local: build ## Run Docker's validator on a local image (multi-arch publish checks still fail locally)
 	docker extension validate $(EXTENSION_IMAGE)
 
 push-extension: ui-build ## Build and push a multi-arch image for publication checks

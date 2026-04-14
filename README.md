@@ -63,11 +63,13 @@ make update
 
 Docker Desktop's publication checks expect a pushed multi-arch image for both `linux/amd64` and `linux/arm64`.
 
-For a local development check:
+For a local diagnostic run against the current image:
 
 ```bash
 make validate-local
 ```
+
+This still reports the multi-arch publication failure when the image only exists locally.
 
 For a publish-grade validation:
 
@@ -217,7 +219,7 @@ make test
 # Tidy Go module dependencies
 make tidy
 
-# Validate the local single-arch image
+# Run Docker's validator against the local image
 make validate-local
 
 # Build, push, and validate a release image for linux/amd64 and linux/arm64
