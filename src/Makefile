@@ -23,7 +23,7 @@ ui-dev: ui-install ## Start React UI dev server (hot-reload, outside Docker Desk
 
 # ── Extension ─────────────────────────────────────────────────────────────────
 
-build: ui-build ## Build the full extension Docker image for the current host architecture
+build: ## Build the full extension Docker image for the current host architecture (UI is built inside Dockerfile)
 	docker build -t $(EXTENSION_IMAGE) .
 
 install: build ## Install the extension into Docker Desktop
@@ -38,7 +38,7 @@ uninstall: ## Uninstall the extension from Docker Desktop
 validate-local: build ## Run Docker's validator on a local image (multi-arch publish checks still fail locally)
 	docker extension validate $(EXTENSION_IMAGE)
 
-push-extension: ui-build ## Build and push a multi-arch image for publication checks
+push-extension: ## Build and push a multi-arch image for publication checks (UI is built inside Dockerfile)
 	docker buildx build --platform=$(PLATFORMS) --tag $(RELEASE_IMAGE) --push .
 
 validate-release: push-extension ## Validate a pushed multi-arch image against publication requirements

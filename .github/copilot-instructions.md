@@ -47,6 +47,7 @@ The following files contain the project version number and **must all be kept in
 |---|---|---|
 | `src/Makefile` | `VERSION ?= <x.y.z>` | Plain string (authoritative source) |
 | `src/ui/package.json` | `"version": "<x.y.z>"` | JSON string (line 3) |
+| `src/ui/package-lock.json` | top-level and root package `"version": "<x.y.z>"` | JSON lockfile version fields |
 | `src/backend/internal/mcp/server.go` | health handler `"version":"<x.y.z>"` | JSON string literal in `fmt.Fprintf` |
 | `src/Dockerfile` | `org.opencontainers.image.version="<x.y.z>"` | OCI label in `LABEL` block |
 | `src/Dockerfile` | `com.docker.extension.changelog="<ul>…</ul>"` | HTML changelog in `LABEL` block — add only UI, MCP, or breaking changes; **never** include GitHub workflow or Copilot config changes |
