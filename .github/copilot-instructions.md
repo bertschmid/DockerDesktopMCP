@@ -33,7 +33,8 @@ DockerDesktopMCP/
 ## Versioning Rules
 
 - The version is defined in `src/Makefile` as `VERSION ?= <major>.<minor>.<patch>`
-- **With every change, the build number (patch) must be incremented.**
+- **With every product-relevant code or behavior change, the build number (patch) must be incremented.**
+- **Exception:** A pure re-publication/re-release without code or behavior changes does **not** require a version bump.
 - For breaking changes, increment the **minor** version and reset the patch to `0`.
 - For major API/architecture overhauls, increment the **major** version.
 - Always update `version.md` in the root folder when changing the version, documenting what changed and any breaking changes.
@@ -94,7 +95,7 @@ Every agent must follow this workflow for every task:
 2. **Plan** – Create a step-by-step plan that leads to the goal. Each step must be self-contained and verifiable.
 3. **Execute** – Run each step in its own dedicated sub-agent. A sub-agent **must not** start further sub-agents.
 4. **Verify** – After each sub-agent completes, check the result. If the result is correct, continue to the next step. If not, repeat the step with adjustments derived from the review, until the result is acceptable.
-5. **Version** – The plan always ends with updating `version.md` (and `src/Makefile`) to reflect the new version, documenting what changed.
+5. **Version** – If the task includes product-relevant changes, update `version.md` (and `src/Makefile`) to reflect the new version, documenting what changed. For pure re-publication without code/behavior changes, keep the version unchanged.
 
 ## MCP Tool Categories
 
