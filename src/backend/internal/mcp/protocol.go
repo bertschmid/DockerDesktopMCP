@@ -50,8 +50,9 @@ type InitializeParams struct {
 }
 
 type ClientCaps struct {
-	Roots    *RootsCap    `json:"roots,omitempty"`
-	Sampling *SamplingCap `json:"sampling,omitempty"`
+	Roots     *RootsCap         `json:"roots,omitempty"`
+	Sampling  *SamplingCap      `json:"sampling,omitempty"`
+	Resources *ClientResourcesCap `json:"resources,omitempty"`
 }
 
 type RootsCap struct {
@@ -59,6 +60,11 @@ type RootsCap struct {
 }
 
 type SamplingCap struct{}
+
+type ClientResourcesCap struct {
+	Subscribe   bool `json:"subscribe,omitempty"`
+	ListChanged bool `json:"listChanged,omitempty"`
+}
 
 type ClientInfo struct {
 	Name    string `json:"name"`
@@ -72,10 +78,15 @@ type InitializeResult struct {
 }
 
 type ServerCaps struct {
-	Tools *ToolsCap `json:"tools,omitempty"`
+	Tools     *ToolsCap     `json:"tools,omitempty"`
+	Resources *ResourcesCap `json:"resources,omitempty"`
 }
 
 type ToolsCap struct {
+	ListChanged bool `json:"listChanged"`
+}
+
+type ResourcesCap struct {
 	ListChanged bool `json:"listChanged"`
 }
 
@@ -90,6 +101,7 @@ type Tool struct {
 	Name        string      `json:"name"`
 	Description string      `json:"description,omitempty"`
 	InputSchema InputSchema `json:"inputSchema"`
+	Meta        map[string]any `json:"_meta,omitempty"`
 }
 
 type InputSchema struct {
@@ -112,6 +124,31 @@ type Items struct {
 
 type ListToolsResult struct {
 	Tools []Tool `json:"tools"`
+}
+
+type Resource struct {
+	URI      string `json:"uri"`
+	Name     string `json:"name,omitempty"`
+	MimeType string `json:"mimeType"`
+}
+
+type ListResourcesResult struct {
+	Resources []Resource `json:"resources"`
+}
+
+type ReadResourceParams struct {
+	URI string `json:"uri"`
+}
+
+type ResourceContent struct {
+	URI      string `json:"uri"`
+	MimeType string `json:"mimeType"`
+	Text     string `json:"text,omitempty"`
+	Blob     string `json:"blob,omitempty"`
+}
+
+type ReadResourceResult struct {
+	Contents []ResourceContent `json:"contents"`
 }
 
 type CallToolParams struct {

@@ -4,6 +4,93 @@ All notable changes and breaking changes are documented in this file.
 
 ---
 
+## [1.0.13] - 2026-04-15
+
+### Changed
+- Expanded MCP tool and parameter descriptions for container, image, volume, network, and compose tools.
+- Added explicit boolean effects (`true` vs `false`) and concrete argument examples in tool schemas to improve AI prompt-to-tool precision.
+
+### Breaking Changes
+- None.
+
+---
+
+## [1.0.12] - 2026-04-15
+
+### Changed
+- Added concrete `filters` usage examples directly in all `docker_system_prune_*` tool descriptions to improve AI parameter selection quality.
+
+### Breaking Changes
+- None.
+
+---
+
+## [1.0.11] - 2026-04-15
+
+### Changed
+- Added an optional `filters` string array parameter to all `docker_system_prune_*` tools, allowing targeted cleanup with Docker prune filter expressions such as `label=...`, `label!=...`, or `until=...`.
+- Refactored repeated MCP registry descriptions, UI metadata keys, and JSON header literals into constants/helpers to clear the remaining backend quality warnings.
+
+### Breaking Changes
+- None.
+
+---
+
+## [1.0.10] - 2026-04-15
+
+### Changed
+- Split the former `docker_system_prune` cleanup into dedicated tools for containers, images, networks, build cache, and volumes.
+- Renamed the combined cleanup tool to `docker_system_prune_all` and removed the previous `all` and `volumes` parameters.
+- Expanded system tool descriptions in the MCP tool registry so AI clients can better understand cleanup scope and diagnostic use cases.
+
+### Breaking Changes
+- `docker_system_prune` was renamed to `docker_system_prune_all`.
+
+---
+
+## [1.0.9] - 2026-04-15
+
+### Changed
+- Fixed disk usage chart rendering in MCP Apps UI by supporting IEC size units (`KiB`, `MiB`, `GiB`, `TiB`) in byte parsing.
+
+### Breaking Changes
+- None.
+
+---
+
+## [1.0.8] - 2026-04-15
+
+### Changed
+- Added tool-level MCP Apps metadata (`_meta.ui.resourceUri` and `ui/resourceUri`) to iframe-capable list and system tools in `tools/list`.
+- Improved Claude Desktop compatibility so hosts can resolve and render MCP iframe resources directly from tool definitions.
+
+### Breaking Changes
+- None.
+
+---
+
+## [1.0.7] - 2026-04-15
+
+### Changed
+- Added MCP Apps resource support to the backend with `resources/list` and `resources/read` methods.
+- Added a dedicated `src/ui-apps` Vite project that builds single-file HTML apps for list-oriented tools.
+- Embedded generated UI app assets into the backend binary via `go:embed` and served them through MCP resources.
+- Extended tool results with `structuredContent` and `_meta.ui.resourceUri` for UI-capable hosts.
+- Added MCP Apps metadata and structured payloads for:
+  - `docker_container_list`
+  - `docker_image_list`
+  - `docker_volume_list`
+  - `docker_network_list`
+  - `docker_compose_ps`
+  - `docker_system_info`
+  - `docker_system_df`
+- Updated Dockerfile build pipeline to build and copy `ui-apps` artifacts before Go compilation.
+
+### Breaking Changes
+- None.
+
+---
+
 ## [1.0.6] - 2026-04-14
 
 ### Changed

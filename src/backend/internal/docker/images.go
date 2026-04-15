@@ -16,6 +16,21 @@ import (
 	"docker-mcp/internal/result"
 )
 
+const imageRequiredError = "image is required"
+
+type imagePullEvent struct {
+	Status string `json:"status"`
+	Error  string `json:"error,omitempty"`
+}
+
+func parseImagePullEvent(line []byte) (imagePullEvent, bool) {
+	var event imagePullEvent
+	if err := json.Unmarshal(line, &event); err != nil {
+		return imagePullEvent{}, false
+	}
+	return event, true
+}
+
 // ImageList lists local images.
 func (c *Client) ImageList(ctx context.Context, all bool) (*result.CallToolResult, error) {
 	images, err := c.cli.ImageList(ctx, types.ImageListOptions{All: all})
@@ -57,14 +72,21 @@ func (c *Client) ImageList(ctx context.Context, all bool) (*result.CallToolResul
 		})
 	}
 
-	out, _ := json.MarshalIndent(rows, "", "  ")
-	return result.Text(string(out)), nil
+	out, err := json.MarshalIndent(rows, "", "  ")
+	if err != nil {
+		return nil, fmt.Errorf("marshal image list: %w", err)
+	}
+	return result.TextStructuredUI(
+		string(out),
+		map[string]any{"images": rows},
+		"ui://docker-desktop/images",
+	), nil
 }
 
 // ImagePull pulls an image from a registry.
 func (c *Client) ImagePull(ctx context.Context, ref, platform string) (*result.CallToolResult, error) {
 	if ref == "" {
-		return nil, fmt.Errorf("image is required")
+		return nil, fmt.Errorf(imageRequiredError)
 	}
 
 	opts := types.ImagePullOptions{}
@@ -82,21 +104,19 @@ func (c *Client) ImagePull(ctx context.Context, ref, platform string) (*result.C
 	var sb strings.Builder
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
-		var event struct {
-			Status string `json:"status"`
-			Error  string `json:"error,omitempty"`
+		event, ok := parseImagePullEvent(scanner.Bytes())
+		if !ok {
+			continue
 		}
-		if err := json.Unmarshal(scanner.Bytes(), &event); err == nil {
-			if event.Error != "" {
-				return nil, fmt.Errorf("pull error: %s", event.Error)
-			}
-			if event.Status != "" && !strings.HasPrefix(event.Status, "Pulling from") {
-				// Skip noisy per-layer progress lines
-				continue
-			}
-			if event.Status != "" {
-				sb.WriteString(event.Status + "\n")
-			}
+		if event.Error != "" {
+			return nil, fmt.Errorf("pull error: %s", event.Error)
+		}
+		if event.Status != "" && !strings.HasPrefix(event.Status, "Pulling from") {
+			// Skip noisy per-layer progress lines
+			continue
+		}
+		if event.Status != "" {
+			sb.WriteString(event.Status + "\n")
 		}
 	}
 
@@ -106,7 +126,7 @@ func (c *Client) ImagePull(ctx context.Context, ref, platform string) (*result.C
 // ImageRemove removes an image.
 func (c *Client) ImageRemove(ctx context.Context, ref string, force bool) (*result.CallToolResult, error) {
 	if ref == "" {
-		return nil, fmt.Errorf("image is required")
+		return nil, fmt.Errorf(imageRequiredError)
 	}
 
 	items, err := c.cli.ImageRemove(ctx, ref, types.ImageRemoveOptions{
@@ -132,7 +152,7 @@ func (c *Client) ImageRemove(ctx context.Context, ref string, force bool) (*resu
 // ImageInspect returns detailed info about an image.
 func (c *Client) ImageInspect(ctx context.Context, ref string) (*result.CallToolResult, error) {
 	if ref == "" {
-		return nil, fmt.Errorf("image is required")
+		return nil, fmt.Errorf(imageRequiredError)
 	}
 	info, _, err := c.cli.ImageInspectWithRaw(ctx, ref)
 	if err != nil {
@@ -212,46 +232,59 @@ func buildContextTar(contextPath string) (io.Reader, error) {
 
 	go func() {
 		tw := tar.NewWriter(pw)
-		err := filepath.Walk(contextPath, func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
+		err := filepath.Walk(contextPath, func(path string, info os.FileInfo, walkErr error) error {
+			if walkErr != nil {
+				return walkErr
 			}
-			base := filepath.Base(path)
-			if base == ".git" || base == ".DS_Store" {
-				if info.IsDir() {
-					return filepath.SkipDir
-				}
+			if skipDir, skipFile := shouldSkipBuildPath(path, info); skipDir {
+				return filepath.SkipDir
+			} else if skipFile {
 				return nil
 			}
 			if info.IsDir() {
 				return nil
 			}
-			relPath, err := filepath.Rel(contextPath, path)
-			if err != nil {
-				return err
-			}
-			hdr := &tar.Header{
-				Name:    filepath.ToSlash(relPath),
-				Mode:    int64(info.Mode()),
-				Size:    info.Size(),
-				ModTime: info.ModTime(),
-			}
-			if err := tw.WriteHeader(hdr); err != nil {
-				return err
-			}
-			f, err := os.Open(path)
-			if err != nil {
-				return err
-			}
-			defer f.Close()
-			_, err = io.Copy(tw, f)
-			return err
+			return addFileToBuildTar(tw, contextPath, path, info)
 		})
 		tw.Close()
 		pw.CloseWithError(err)
 	}()
 
 	return pr, nil
+}
+
+func shouldSkipBuildPath(path string, info os.FileInfo) (skipDir bool, skipFile bool) {
+	base := filepath.Base(path)
+	if base != ".git" && base != ".DS_Store" {
+		return false, false
+	}
+	if info.IsDir() {
+		return true, false
+	}
+	return false, true
+}
+
+func addFileToBuildTar(tw *tar.Writer, contextPath, path string, info os.FileInfo) error {
+	relPath, err := filepath.Rel(contextPath, path)
+	if err != nil {
+		return err
+	}
+	hdr := &tar.Header{
+		Name:    filepath.ToSlash(relPath),
+		Mode:    int64(info.Mode()),
+		Size:    info.Size(),
+		ModTime: info.ModTime(),
+	}
+	if err := tw.WriteHeader(hdr); err != nil {
+		return err
+	}
+	f, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	_, err = io.Copy(tw, f)
+	return err
 }
 
 func parseBuildArgs(args []string) map[string]*string {

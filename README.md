@@ -6,7 +6,7 @@
 
 ## Features
 
-- **35 MCP tools** covering the full Docker Desktop API
+- **40 MCP tools** covering the full Docker Desktop API
 - Works as a **Docker Desktop Extension** — install in one command
 - Dashboard tab in Docker Desktop UI
 - Health endpoint at `/health`
@@ -170,14 +170,19 @@ Configure your MCP client to use the HTTP transport:
 | `docker_compose_logs` | Fetch logs from Compose services |
 | `docker_compose_pull` | Pull images for a Compose project |
 
-### System (4)
+### System (9)
 
 | Tool | Description |
 |---|---|
 | `docker_system_info` | Docker system-wide information |
 | `docker_system_version` | Docker version details |
 | `docker_system_df` | Disk usage summary |
-| `docker_system_prune` | Remove unused Docker resources |
+| `docker_system_prune_all` | Remove all unused Docker resources |
+| `docker_system_prune_containers` | Remove unused container resources |
+| `docker_system_prune_images` | Remove unused images |
+| `docker_system_prune_networks` | Remove unused networks |
+| `docker_system_prune_build_cache` | Remove unused build cache |
+| `docker_system_prune_volumes` | Remove unused volumes |
 
 ---
 

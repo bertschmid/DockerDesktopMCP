@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MCP Basic Host Validation</title>
+    <style>
+      body { font-family: Segoe UI, Arial, sans-serif; margin: 16px; }
+      #status { font-weight: 700; margin-bottom: 10px; }
+      #status.pass { color: #0a7f2e; }
+      #status.fail { color: #b00020; }
+      #log { white-space: pre-wrap; font-family: Consolas, monospace; border: 1px solid #ddd; padding: 8px; max-height: 220px; overflow: auto; }
+      iframe { width: 100%; height: 600px; border: 1px solid #999; margin-top: 10px; }
+    </style>
+  </head>
+  <body>
+    <h1>Basic Host Validation</h1>
+    <div id="status">PENDING</div>
+    <div id="log"></div>
+    <iframe id="appFrame" title="MCP app frame"></iframe>
+
+    <script type="module">
+      const mcpUrl = "http://127.0.0.1:3283/mcp";
+      const resourceUri = "ui://docker-desktop/containers";
+      const toolName = "docker_container_list";
+      const toolArgs = { all: true };
+
+      const statusEl = document.getElementById("status");
+      const logEl = document.getElementById("log");
+      const iframe = document.getElementById("appFrame");
+
+      function log(line) {
+        logEl.textContent += `${new Date().toISOString()} ${line}\n`;
+        logEl.scrollTop = logEl.scrollHeight;
+      }
+
+      function setStatus(state, msg) {
+        if (state === "PASS") {
+          statusEl.className = "pass";
+        } else if (state === "FAIL") {
+          statusEl.className = "fail";
+        } else {
+          statusEl.className = "";
+        }
+        statusEl.textContent = `${state}: ${msg}`;
+      }
+
+      async function rpc(method, params, id = 1) {
+        const res = await fetch(mcpUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ jsonrpc: "2.0", id, method, params })
+        });
+        return await res.json();
+      }
+
+      function postToFrame(msg) {
+        iframe.contentWindow.postMessage(msg, "*");
+      }
+
+      function makeInitResult(request) {
+        return {
+          jsonrpc: "2.0",
+          id: request.id,
+          result: {
+            protocolVersion: request.params?.protocolVersion || "2026-01-26",
+            hostInfo: { name: "basic-host", version: "1.0.0" },
+            hostCapabilities: {
+              serverTools: { listChanged: false },
+              serverResources: { listChanged: false },
+              openLinks: {},
+              message: { text: {}, structuredContent: {} }
+            },
+            hostContext: {
+              theme: "light",
+              platform: "desktop",
+              locale: "en-US"
+            }
+          }
+        };
+      }
+
+      async function initializeMCP() {
+        const init = await rpc("initialize", {
+          protocolVersion: "2025-03-26",
+          capabilities: {},
+          clientInfo: { name: "basic-host-validator", version: "1.0.0" }
+        }, 101);
+        if (init.error) {
+          throw new Error(`MCP initialize failed: ${init.error.message}`);
+        }
+      }
+
+      async function readResourceHTML() {
+        const list = await rpc("resources/list", {}, 102);
+        if (list.error) {
+          throw new Error(`resources/list failed: ${list.error.message}`);
+        }
+        if (!Array.isArray(list.result?.resources)) {
+          throw new TypeError("resources/list has no resources array");
+        }
+
+        const read = await rpc("resources/read", { uri: resourceUri }, 103);
+        if (read.error) {
+          throw new Error(`resources/read failed: ${read.error.message}`);
+        }
+        const html = read.result?.contents?.[0]?.text;
+        if (!html || typeof html !== "string") {
+          throw new Error("resources/read returned no HTML text");
+        }
+        return html;
+      }
+
+      async function callTool() {
+        const tool = await rpc("tools/call", { name: toolName, arguments: toolArgs }, 104);
+        if (tool.error) {
+          throw new Error(`tools/call failed: ${tool.error.message}`);
+        }
+        if (!tool.result?.structuredContent) {
+          throw new Error("tools/call has no structuredContent");
+        }
+        return tool.result;
+      }
+
+      function setupFrameMessaging(toolResult) {
+        let initialized = false;
+
+        window.addEventListener("message", (event) => {
+          const msg = event.data;
+          if (!msg || msg.jsonrpc !== "2.0" || typeof msg.method !== "string") {
+            return;
+          }
+
+          if (msg.method === "ui/initialize") {
+            log("<-- ui/initialize from iframe");
+            postToFrame(makeInitResult(msg));
+            log("--> ui/initialize result sent to iframe");
+            return;
+          }
+
+          if (msg.method === "ui/notifications/initialized") {
+            initialized = true;
+            log("<-- ui/notifications/initialized from iframe");
+            postToFrame({
+              jsonrpc: "2.0",
+              method: "ui/notifications/tool-result",
+              params: toolResult
+            });
+            log("--> ui/notifications/tool-result sent to iframe");
+            return;
+          }
+
+          if (msg.method === "ui/notifications/size-changed") {
+            log(`<-- ui/notifications/size-changed ${JSON.stringify(msg.params)}`);
+          }
+        });
+
+        return () => initialized;
+      }
+
+      async function waitForRenderedContent(isInitialized) {
+        const started = Date.now();
+        const timeoutMs = 12000;
+
+        while (Date.now() - started < timeoutMs) {
+          await new Promise((resolve) => setTimeout(resolve, 200));
+          if (!isInitialized()) {
+            continue;
+          }
+          const text = iframe.contentDocument?.body?.innerText || "";
+          if (text.includes("Containers") && text.includes("Running")) {
+            return;
+          }
+        }
+
+        const snapshot = iframe.contentDocument?.body?.innerText?.slice(0, 240) || "<no-body-text>";
+        throw new Error(`Timed out waiting for rendered content. Snapshot: ${snapshot}`);
+      }
+
+      async function runValidation() {
+        setStatus("RUNNING", "Loading MCP resource and tool result");
+        await initializeMCP();
+        const html = await readResourceHTML();
+        const toolResult = await callTool();
+        const isInitialized = setupFrameMessaging(toolResult);
+        iframe.srcdoc = html;
+        await waitForRenderedContent(isInitialized);
+
+        setStatus("PASS", "Iframe rendered containers UI and received tool result");
+        log("Validation PASS");
+      }
+
+      try {
+        await runValidation();
+      } catch (err) {
+        setStatus("FAIL", err instanceof Error ? err.message : String(err));
+        log(`Validation FAIL: ${err instanceof Error ? err.stack || err.message : String(err)}`);
+      }
+    </script>
+  </body>
+</html>

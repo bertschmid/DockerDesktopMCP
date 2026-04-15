@@ -566,3 +566,68 @@ Keep the repository's release version files synchronized according to the reposi
 
 This plan is intentionally limited to MCP Apps resource delivery and the required backend
 integration. No additional UI surface is part of the task.
+
+---
+
+## Fortsetzungsplan Bei Abbruch (Schritte + Fortschritt)
+
+Ziel dieses Abschnitts: Bei Unterbrechung kann an jedem Punkt exakt weitergemacht werden.
+
+### Status-Legende
+
+- `[ ]` Nicht begonnen
+- `[~]` In Arbeit
+- `[x]` Abgeschlossen
+- `[!]` Blockiert (mit Grund notieren)
+
+### Arbeitsregel
+
+Nach jedem Schritt:
+
+1. Status aktualisieren
+2. Ergebnis in "Notizen/Ergebnis" eintragen
+3. Nächsten Startpunkt in "Weiter ab Schritt" setzen
+
+### Schritte Mit Fortschritt
+
+| Nr. | Status | Schritt | Konkretes Ergebnis | Notizen/Ergebnis |
+|---|---|---|---|---|
+| 1 | `[x]` | ui-apps Grundgeruest anlegen | package.json, tsconfig.json, vite.config.ts vorhanden | Abgeschlossen am 2026-04-15 |
+| 2 | `[x]` | HTML Entry-Dateien anlegen | 7 Entry-Dateien vorhanden (containers, images, volumes, networks, compose, disk-usage, system-info) | Abgeschlossen am 2026-04-15 |
+| 3 | `[x]` | Shared Module anlegen | theme.ts, table.ts, svg.ts, formatting.ts vorhanden | Abgeschlossen am 2026-04-15 |
+| 4 | `[x]` | Containers App implementieren | Tabelle + Status-Badges + optional Tool-Aktionen | Abgeschlossen am 2026-04-15 |
+| 5 | `[x]` | Images App implementieren | Tabelle + Groessenvisualisierung | Abgeschlossen am 2026-04-15 |
+| 6 | `[x]` | Volumes App implementieren | Tabelle + Driver/Scope Badges | Abgeschlossen am 2026-04-15 |
+| 7 | `[x]` | Networks App implementieren | Tabelle + SVG Topology | Abgeschlossen am 2026-04-15 |
+| 8 | `[x]` | Compose App implementieren | Gruppierung nach Projekt + Service-Status | Abgeschlossen am 2026-04-15 |
+| 9 | `[x]` | Disk-Usage App implementieren | SVG Pie/Donut fuer Speicheranteile | Abgeschlossen am 2026-04-15 |
+| 10 | `[x]` | System-Info App implementieren | KPI-Karten (CPU, RAM, OS, Kernel, Docker Version) | Abgeschlossen am 2026-04-15 |
+| 11 | `[x]` | ui-apps Build validieren | dist/*.html erfolgreich erzeugt | `npm.cmd run build` erfolgreich |
+| 12 | `[x]` | MCP Protocol Typen erweitern | Resource- und Read-Typen in protocol.go | Abgeschlossen am 2026-04-15 |
+| 13 | `[x]` | Ressourcen-Handler implementieren | resources/list + resources/read in resources.go | Abgeschlossen am 2026-04-15 |
+| 14 | `[x]` | Embedding einbauen | go:embed fuer ui-apps-dist/*.html aktiv | Abgeschlossen am 2026-04-15 |
+| 15 | `[x]` | Result-Modell erweitern | structuredContent + _meta in result.go | Abgeschlossen am 2026-04-15 |
+| 16 | `[x]` | List-Tools an UI anbinden | _meta.ui.resourceUri + structuredContent in allen Ziel-Tools | Abgeschlossen am 2026-04-15 |
+| 17 | `[x]` | Server Routing erweitern | Handler fuer resources/list + resources/read aktiv | Abgeschlossen am 2026-04-15 |
+| 18 | `[x]` | Dockerfile Build-Stages erweitern | ui-apps Build vor Go Build integriert | Abgeschlossen am 2026-04-15 |
+| 19 | `[x]` | Lokale Validierung | ui-apps build + make dev laufen ohne Fehler | `npm.cmd run build` + `go test ./...` + `go build ./...` + Runtime-Checks fuer resources/list/read erfolgreich |
+| 20 | `[x]` | Host-Validierung | basic-host zeigt UI-Resources korrekt im iframe | Automatischer PASS mit dev/basic-host Harness + Playwright |
+| 21 | `[x]` | Release-Vorbereitung | Version synchron in allen Release-Dateien angepasst | Version auf 1.0.7 synchronisiert |
+
+### Resume-Block (Immer aktuell halten)
+
+| Feld | Wert |
+|---|---|
+| Aktueller Status | `Abgeschlossen` |
+| Weiter ab Schritt | `-` |
+| Letzter abgeschlossener Schritt | `21` |
+| Letzte erfolgreiche Pruefung | `basic-host iframe PASS inkl. ui/initialize, ui/notifications/initialized, ui/notifications/tool-result` |
+| Aktueller Blocker | `-` |
+| Naechste konkrete Aktion | `Keine - Implementierung und Validierung abgeschlossen` |
+
+### Abbruch-Sichere Kurz-Checkliste
+
+- [ ] Nach jeder Teilaufgabe Build/Check ausfuehren
+- [ ] Bei Fehlern Ursache + Datei im Notizfeld dokumentieren
+- [ ] Vor Kontextwechsel "Weiter ab Schritt" aktualisieren
+- [ ] Keine neuen Aufgaben starten, bevor der aktuelle Schritt abgeschlossen oder als blockiert markiert ist

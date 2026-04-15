@@ -10,6 +10,8 @@ import (
 	"docker-mcp/internal/result"
 )
 
+const networkNameRequiredError = "name is required"
+
 // NetworkList lists all Docker networks.
 func (c *Client) NetworkList(ctx context.Context) (*result.CallToolResult, error) {
 	networks, err := c.cli.NetworkList(ctx, types.NetworkListOptions{})
@@ -40,14 +42,21 @@ func (c *Client) NetworkList(ctx context.Context) (*result.CallToolResult, error
 		})
 	}
 
-	out, _ := json.MarshalIndent(rows, "", "  ")
-	return result.Text(string(out)), nil
+	out, err := json.MarshalIndent(rows, "", "  ")
+	if err != nil {
+		return nil, fmt.Errorf("marshal network list: %w", err)
+	}
+	return result.TextStructuredUI(
+		string(out),
+		map[string]any{"networks": rows},
+		"ui://docker-desktop/networks",
+	), nil
 }
 
 // NetworkCreate creates a new Docker network.
 func (c *Client) NetworkCreate(ctx context.Context, name, driver, subnet string) (*result.CallToolResult, error) {
 	if name == "" {
-		return nil, fmt.Errorf("name is required")
+		return nil, fmt.Errorf(networkNameRequiredError)
 	}
 
 	opts := types.NetworkCreate{
@@ -77,7 +86,7 @@ func (c *Client) NetworkCreate(ctx context.Context, name, driver, subnet string)
 // NetworkRemove removes a network.
 func (c *Client) NetworkRemove(ctx context.Context, name string) (*result.CallToolResult, error) {
 	if name == "" {
-		return nil, fmt.Errorf("name is required")
+		return nil, fmt.Errorf(networkNameRequiredError)
 	}
 	if err := c.cli.NetworkRemove(ctx, name); err != nil {
 		return nil, err
@@ -88,7 +97,7 @@ func (c *Client) NetworkRemove(ctx context.Context, name string) (*result.CallTo
 // NetworkInspect returns detailed info about a network.
 func (c *Client) NetworkInspect(ctx context.Context, name string) (*result.CallToolResult, error) {
 	if name == "" {
-		return nil, fmt.Errorf("name is required")
+		return nil, fmt.Errorf(networkNameRequiredError)
 	}
 	n, err := c.cli.NetworkInspect(ctx, name, types.NetworkInspectOptions{Verbose: true})
 	if err != nil {

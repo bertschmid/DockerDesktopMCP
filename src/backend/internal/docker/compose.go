@@ -3,6 +3,7 @@ package docker
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"os/exec"
 	"strings"
@@ -10,10 +11,12 @@ import (
 	"docker-mcp/internal/result"
 )
 
+const composeProjectDirRequiredError = "project_dir is required"
+
 // ComposeUp starts services defined in a docker-compose.yml file.
 func (c *Client) ComposeUp(ctx context.Context, projectDir string, services []string, detach, build, forceRecreate bool) (*result.CallToolResult, error) {
 	if projectDir == "" {
-		return nil, fmt.Errorf("project_dir is required")
+		return nil, fmt.Errorf(composeProjectDirRequiredError)
 	}
 
 	args := []string{"compose", "up"}
@@ -41,7 +44,7 @@ func (c *Client) ComposeUp(ctx context.Context, projectDir string, services []st
 // ComposeDown stops and removes containers and networks.
 func (c *Client) ComposeDown(ctx context.Context, projectDir string, volumes, removeOrphans bool) (*result.CallToolResult, error) {
 	if projectDir == "" {
-		return nil, fmt.Errorf("project_dir is required")
+		return nil, fmt.Errorf(composeProjectDirRequiredError)
 	}
 
 	args := []string{"compose", "down"}
@@ -65,20 +68,44 @@ func (c *Client) ComposeDown(ctx context.Context, projectDir string, volumes, re
 // ComposePs lists containers for a compose project.
 func (c *Client) ComposePs(ctx context.Context, projectDir string) (*result.CallToolResult, error) {
 	if projectDir == "" {
-		return nil, fmt.Errorf("project_dir is required")
+		return nil, fmt.Errorf(composeProjectDirRequiredError)
 	}
 
-	out, err := runDockerCLI(ctx, projectDir, "compose", "ps")
+	rawJSON, err := runDockerCLI(ctx, projectDir, "compose", "ps", "--format", "json")
 	if err != nil {
-		return result.Text(fmt.Sprintf("compose ps failed:\n%s", out)), nil
+		return result.Text(fmt.Sprintf("compose ps failed:\n%s", rawJSON)), nil
 	}
-	return result.Text(out), nil
+
+	var services []map[string]any
+	if err := json.Unmarshal([]byte(rawJSON), &services); err != nil {
+		// Fallback if Compose version does not support --format json output.
+		fallbackOut, fallbackErr := runDockerCLI(ctx, projectDir, "compose", "ps")
+		if fallbackErr != nil {
+			return result.Text(fmt.Sprintf("compose ps failed:\n%s", fallbackOut)), nil
+		}
+		return result.TextStructuredUI(
+			fallbackOut,
+			map[string]any{"services": []map[string]any{}, "raw": fallbackOut, "project_dir": projectDir},
+			"ui://docker-desktop/compose-services",
+		), nil
+	}
+
+	out, err := json.MarshalIndent(services, "", "  ")
+	if err != nil {
+		return nil, fmt.Errorf("marshal compose ps: %w", err)
+	}
+
+	return result.TextStructuredUI(
+		string(out),
+		map[string]any{"services": services, "project_dir": projectDir},
+		"ui://docker-desktop/compose-services",
+	), nil
 }
 
 // ComposeLogs fetches logs from compose services.
 func (c *Client) ComposeLogs(ctx context.Context, projectDir string, services []string, tail string) (*result.CallToolResult, error) {
 	if projectDir == "" {
-		return nil, fmt.Errorf("project_dir is required")
+		return nil, fmt.Errorf(composeProjectDirRequiredError)
 	}
 
 	args := []string{"compose", "logs", "--no-color", "--tail", tail}
@@ -94,7 +121,7 @@ func (c *Client) ComposeLogs(ctx context.Context, projectDir string, services []
 // ComposePull pulls images for all or specified services.
 func (c *Client) ComposePull(ctx context.Context, projectDir string, services []string) (*result.CallToolResult, error) {
 	if projectDir == "" {
-		return nil, fmt.Errorf("project_dir is required")
+		return nil, fmt.Errorf(composeProjectDirRequiredError)
 	}
 
 	args := []string{"compose", "pull"}

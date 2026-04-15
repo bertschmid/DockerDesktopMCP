@@ -10,6 +10,17 @@ RUN npm install && npm dedupe
 COPY ui/ .
 RUN npm run build
 
+# ── Stage 1b: Build MCP Apps HTML resources ─────────────────────────────────
+FROM --platform=$BUILDPLATFORM public.ecr.aws/docker/library/node:24-alpine AS ui-apps-builder
+
+WORKDIR /app/ui-apps
+
+COPY ui-apps/package.json ./
+RUN npm install && npm dedupe
+
+COPY ui-apps/ .
+RUN npm run build
+
 # ── Stage 2: Build the Go MCP server ─────────────────────────────────────────
 FROM --platform=$BUILDPLATFORM public.ecr.aws/docker/library/golang:1.25-alpine AS go-builder
 
@@ -18,6 +29,7 @@ RUN apk add --no-cache git ca-certificates
 
 # Copy entire backend — go mod tidy generates go.sum if it doesn't exist yet
 COPY backend/ .
+COPY --from=ui-apps-builder /app/ui-apps/dist ./internal/mcp/ui-apps-dist
 RUN go mod tidy && \
     CGO_ENABLED=0 GOOS=linux \
     go build -ldflags="-s -w" -o /mcp-server ./main.go
@@ -43,7 +55,7 @@ COPY icon.svg .
 LABEL org.opencontainers.image.title="Docker Desktop MCP Server" \
       org.opencontainers.image.description="HTTP MCP server exposing the full Docker Desktop API to AI assistants." \
       org.opencontainers.image.vendor="bert.schmid@googlemail.com" \
-      org.opencontainers.image.version="1.0.6" \
+      org.opencontainers.image.version="1.0.13" \
       com.docker.desktop.extension.api.version=">= 0.3.3" \
     com.docker.extension.categories="utility-tools" \
       com.docker.desktop.extension.icon="https://raw.githubusercontent.com/bertschmid/DockerDesktopMCP/main/src/icon.svg" \
@@ -51,7 +63,7 @@ LABEL org.opencontainers.image.title="Docker Desktop MCP Server" \
       com.docker.extension.detailed-description="<h1>Docker Desktop MCP Server</h1><p>Starts a local HTTP server implementing the Model Context Protocol (MCP). Connect any MCP-compatible AI assistant (Claude, etc.) to manage containers, images, volumes, networks, and Compose stacks from natural language.</p><h2>Features</h2><ul><li>35 MCP tools covering the full Docker Desktop API</li><li>Configurable port (default: 3282)</li><li>Optional TLS with auto-generated self-signed certificate</li></ul>" \
       com.docker.extension.publisher-url="https://github.com/bertschmid/DockerDesktopMCP" \
     com.docker.extension.additional-urls='[{"title":"Project Repository","url":"https://github.com/bertschmid/DockerDesktopMCP"}]' \
-      com.docker.extension.changelog="<ul><li>v1.0.6 — Fixed docker_container_exec output demultiplexing; added workdir parameter.</li><li>v1.0.5 — Updated Node.js build stage from 22 to 24.</li><li>v1.0.1 — Dark mode support (follows system preference).</li><li>v1.0.0 — Initial release — 35 MCP tools for containers, images, volumes, networks, Compose, and system operations.</li></ul>"
+      com.docker.extension.changelog="<ul><li>v1.0.13 — Expanded MCP tool and parameter descriptions across container, image, volume, network, and compose tools with explicit behavior notes, boolean effects, and usage examples for more precise AI tool selection.</li><li>v1.0.12 — Added concrete filters usage examples directly to docker_system_prune_* tool descriptions to improve AI planning and parameter selection.</li><li>v1.0.11 — Added optional filters arrays to all Docker system prune tools and extracted repeated MCP registry/header literals into constants to clear backend quality warnings.</li><li>v1.0.10 — Split Docker system prune into dedicated cleanup tools for containers, images, networks, build cache, and volumes; renamed the combined cleanup tool to docker_system_prune_all and improved system tool descriptions for AI clients.</li><li>v1.0.9 — Fixed disk usage chart rendering by supporting IEC byte units (KiB, MiB, GiB, TiB) in UI parsing.</li><li>v1.0.8 — Added tool-level MCP Apps metadata in tools/list for iframe-capable list and system tools to improve Claude Desktop UI rendering compatibility.</li><li>v1.0.7 — Added MCP Apps UI resources for Docker list tools via resources/list + resources/read with embedded ui-apps HTML and structuredContent metadata.</li><li>v1.0.6 — Fixed docker_container_exec output demultiplexing; added workdir parameter.</li><li>v1.0.5 — Updated Node.js build stage from 22 to 24.</li><li>v1.0.1 — Dark mode support (follows system preference).</li><li>v1.0.0 — Initial release — 35 MCP tools for containers, images, volumes, networks, Compose, and system operations.</li></ul>"
 
 EXPOSE 3282
 

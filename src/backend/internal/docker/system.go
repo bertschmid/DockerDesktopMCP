@@ -4,11 +4,158 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"docker-mcp/internal/result"
 )
+
+func buildPruneFilters(filterSpecs []string) (filters.Args, error) {
+	args := filters.NewArgs()
+
+	for _, spec := range filterSpecs {
+		spec = strings.TrimSpace(spec)
+		if spec == "" {
+			continue
+		}
+
+		if key, value, ok := strings.Cut(spec, "!="); ok {
+			key = strings.TrimSpace(key)
+			value = strings.TrimSpace(value)
+			if key == "" || value == "" {
+				return filters.Args{}, fmt.Errorf("invalid prune filter %q", spec)
+			}
+			args.Add(key+"!", value)
+			continue
+		}
+
+		if key, value, ok := strings.Cut(spec, "="); ok {
+			key = strings.TrimSpace(key)
+			value = strings.TrimSpace(value)
+			if key == "" || value == "" {
+				return filters.Args{}, fmt.Errorf("invalid prune filter %q", spec)
+			}
+			args.Add(key, value)
+			continue
+		}
+
+		args.Add(spec, "true")
+	}
+
+	return args, nil
+}
+
+func marshalSummaryResult(summary map[string]any) (*result.CallToolResult, error) {
+	out, err := json.MarshalIndent(summary, "", "  ")
+	if err != nil {
+		return nil, fmt.Errorf("marshal prune summary: %w", err)
+	}
+	return result.TextStructured(string(out), summary), nil
+}
+
+func pruneUnusedImageFilters(filterSpecs []string) (filters.Args, error) {
+	args, err := buildPruneFilters(filterSpecs)
+	if err != nil {
+		return filters.Args{}, err
+	}
+	args.Add("dangling", "false")
+	return args, nil
+}
+
+func (c *Client) pruneContainers(ctx context.Context, filterSpecs []string) (map[string]any, error) {
+	pruneFilters, err := buildPruneFilters(filterSpecs)
+	if err != nil {
+		return nil, err
+	}
+
+	report, err := c.cli.ContainersPrune(ctx, pruneFilters)
+	if err != nil {
+		return nil, fmt.Errorf("container prune: %w", err)
+	}
+
+	return map[string]any{
+		"scope":             "containers",
+		"filters":           filterSpecs,
+		"containers_deleted": report.ContainersDeleted,
+		"space_reclaimed":   formatBytes(report.SpaceReclaimed),
+	}, nil
+}
+
+func (c *Client) pruneImages(ctx context.Context, filterSpecs []string) (map[string]any, error) {
+	pruneFilters, err := pruneUnusedImageFilters(filterSpecs)
+	if err != nil {
+		return nil, err
+	}
+
+	report, err := c.cli.ImagesPrune(ctx, pruneFilters)
+	if err != nil {
+		return nil, fmt.Errorf("image prune: %w", err)
+	}
+
+	return map[string]any{
+		"scope":           "images",
+		"filters":         filterSpecs,
+		"images_deleted":  len(report.ImagesDeleted),
+		"space_reclaimed": formatBytes(report.SpaceReclaimed),
+	}, nil
+}
+
+func (c *Client) pruneNetworks(ctx context.Context, filterSpecs []string) (map[string]any, error) {
+	pruneFilters, err := buildPruneFilters(filterSpecs)
+	if err != nil {
+		return nil, err
+	}
+
+	report, err := c.cli.NetworksPrune(ctx, pruneFilters)
+	if err != nil {
+		return nil, fmt.Errorf("network prune: %w", err)
+	}
+
+	return map[string]any{
+		"scope":            "networks",
+		"filters":          filterSpecs,
+		"networks_deleted": report.NetworksDeleted,
+	}, nil
+}
+
+func (c *Client) pruneBuildCache(ctx context.Context, filterSpecs []string) (map[string]any, error) {
+	pruneFilters, err := buildPruneFilters(filterSpecs)
+	if err != nil {
+		return nil, err
+	}
+
+	report, err := c.cli.BuildCachePrune(ctx, types.BuildCachePruneOptions{All: true, Filters: pruneFilters})
+	if err != nil {
+		return nil, fmt.Errorf("build cache prune: %w", err)
+	}
+
+	return map[string]any{
+		"scope":               "build_cache",
+		"filters":             filterSpecs,
+		"build_cache_deleted": len(report.CachesDeleted),
+		"space_reclaimed":     formatBytes(report.SpaceReclaimed),
+	}, nil
+}
+
+func (c *Client) pruneVolumes(ctx context.Context, filterSpecs []string) (map[string]any, error) {
+	pruneFilters, err := buildPruneFilters(filterSpecs)
+	if err != nil {
+		return nil, err
+	}
+
+	report, err := c.cli.VolumesPrune(ctx, pruneFilters)
+	if err != nil {
+		return nil, fmt.Errorf("volume prune: %w", err)
+	}
+
+	return map[string]any{
+		"scope":            "volumes",
+		"filters":          filterSpecs,
+		"volumes_deleted":  report.VolumesDeleted,
+		"space_reclaimed": formatBytes(report.SpaceReclaimed),
+	}, nil
+}
 
 // SystemInfo returns system-wide Docker information.
 func (c *Client) SystemInfo(ctx context.Context) (*result.CallToolResult, error) {
@@ -41,8 +188,15 @@ func (c *Client) SystemInfo(ctx context.Context) (*result.CallToolResult, error)
 		"live_restore_enabled": info.LiveRestoreEnabled,
 	}
 
-	out, _ := json.MarshalIndent(summary, "", "  ")
-	return result.Text(string(out)), nil
+	out, err := json.MarshalIndent(summary, "", "  ")
+	if err != nil {
+		return nil, fmt.Errorf("marshal system info: %w", err)
+	}
+	return result.TextStructuredUI(
+		string(out),
+		map[string]any{"info": summary},
+		"ui://docker-desktop/system-info",
+	), nil
 }
 
 // SystemVersion returns Docker client and server version details.
@@ -108,58 +262,98 @@ func (c *Client) SystemDf(ctx context.Context) (*result.CallToolResult, error) {
 		"total_reclaimable": formatBytes(uint64(imageSize + containerRWSize + volumeSize + cacheSize)),
 	}
 
-	out, _ := json.MarshalIndent(summary, "", "  ")
-	return result.Text(string(out)), nil
+	out, err := json.MarshalIndent(summary, "", "  ")
+	if err != nil {
+		return nil, fmt.Errorf("marshal system df: %w", err)
+	}
+	return result.TextStructuredUI(
+		string(out),
+		map[string]any{"disk_usage": summary},
+		"ui://docker-desktop/disk-usage",
+	), nil
 }
 
-// SystemPrune removes unused Docker resources.
-func (c *Client) SystemPrune(ctx context.Context, all, pruneVolumes bool) (*result.CallToolResult, error) {
-	pruneFilters := filters.NewArgs()
-
-	// Prune containers
-	containerReport, err := c.cli.ContainersPrune(ctx, pruneFilters)
+// SystemPruneAll removes unused containers, images, networks, build cache, and volumes in one operation.
+func (c *Client) SystemPruneAll(ctx context.Context, filterSpecs []string) (*result.CallToolResult, error) {
+	containerSummary, err := c.pruneContainers(ctx, filterSpecs)
 	if err != nil {
-		return nil, fmt.Errorf("container prune: %w", err)
+		return nil, err
 	}
 
-	// Prune images
-	imageReport, err := c.cli.ImagesPrune(ctx, pruneFilters)
+	imageSummary, err := c.pruneImages(ctx, filterSpecs)
 	if err != nil {
-		return nil, fmt.Errorf("image prune: %w", err)
+		return nil, err
 	}
 
-	// Prune networks
-	networkReport, err := c.cli.NetworksPrune(ctx, pruneFilters)
+	networkSummary, err := c.pruneNetworks(ctx, filterSpecs)
 	if err != nil {
-		return nil, fmt.Errorf("network prune: %w", err)
+		return nil, err
 	}
 
-	// Prune build cache
-	buildCacheReport, err := c.cli.BuildCachePrune(ctx, types.BuildCachePruneOptions{All: all})
+	buildCacheSummary, err := c.pruneBuildCache(ctx, filterSpecs)
 	if err != nil {
-		return nil, fmt.Errorf("build cache prune: %w", err)
+		return nil, err
+	}
+
+	volumeSummary, err := c.pruneVolumes(ctx, filterSpecs)
+	if err != nil {
+		return nil, err
 	}
 
 	summary := map[string]any{
-		"containers_deleted": containerReport.ContainersDeleted,
-		"space_reclaimed_containers": formatBytes(containerReport.SpaceReclaimed),
-		"images_deleted":     len(imageReport.ImagesDeleted),
-		"space_reclaimed_images": formatBytes(imageReport.SpaceReclaimed),
-		"networks_deleted":   networkReport.NetworksDeleted,
-		"build_cache_deleted": len(buildCacheReport.CachesDeleted),
-		"space_reclaimed_cache": formatBytes(buildCacheReport.SpaceReclaimed),
+		"scope":       "all",
+		"filters":     filterSpecs,
+		"containers":  containerSummary,
+		"images":      imageSummary,
+		"networks":    networkSummary,
+		"build_cache": buildCacheSummary,
+		"volumes":     volumeSummary,
 	}
 
-	// Optionally prune volumes
-	if pruneVolumes {
-		volReport, err := c.cli.VolumesPrune(ctx, pruneFilters)
-		if err != nil {
-			return nil, fmt.Errorf("volume prune: %w", err)
-		}
-		summary["volumes_deleted"] = volReport.VolumesDeleted
-		summary["space_reclaimed_volumes"] = formatBytes(volReport.SpaceReclaimed)
-	}
+	return marshalSummaryResult(summary)
+}
 
-	out, _ := json.MarshalIndent(summary, "", "  ")
-	return result.Text(string(out)), nil
+// SystemPruneContainers removes stopped containers and container resources that are no longer used.
+func (c *Client) SystemPruneContainers(ctx context.Context, filterSpecs []string) (*result.CallToolResult, error) {
+	summary, err := c.pruneContainers(ctx, filterSpecs)
+	if err != nil {
+		return nil, err
+	}
+	return marshalSummaryResult(summary)
+}
+
+// SystemPruneImages removes unused images, not just dangling ones.
+func (c *Client) SystemPruneImages(ctx context.Context, filterSpecs []string) (*result.CallToolResult, error) {
+	summary, err := c.pruneImages(ctx, filterSpecs)
+	if err != nil {
+		return nil, err
+	}
+	return marshalSummaryResult(summary)
+}
+
+// SystemPruneNetworks removes unused Docker networks that have no active attachments.
+func (c *Client) SystemPruneNetworks(ctx context.Context, filterSpecs []string) (*result.CallToolResult, error) {
+	summary, err := c.pruneNetworks(ctx, filterSpecs)
+	if err != nil {
+		return nil, err
+	}
+	return marshalSummaryResult(summary)
+}
+
+// SystemPruneBuildCache removes all unused Docker build cache records.
+func (c *Client) SystemPruneBuildCache(ctx context.Context, filterSpecs []string) (*result.CallToolResult, error) {
+	summary, err := c.pruneBuildCache(ctx, filterSpecs)
+	if err != nil {
+		return nil, err
+	}
+	return marshalSummaryResult(summary)
+}
+
+// SystemPruneVolumes removes unused Docker volumes that are not referenced by containers.
+func (c *Client) SystemPruneVolumes(ctx context.Context, filterSpecs []string) (*result.CallToolResult, error) {
+	summary, err := c.pruneVolumes(ctx, filterSpecs)
+	if err != nil {
+		return nil, err
+	}
+	return marshalSummaryResult(summary)
 }

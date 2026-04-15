@@ -35,11 +35,15 @@ func (c *Client) VolumeList(ctx context.Context) (*result.CallToolResult, error)
 		})
 	}
 
-	out, _ := json.MarshalIndent(map[string]any{
+	payload := map[string]any{
 		"volumes":  rows,
 		"warnings": resp.Warnings,
-	}, "", "  ")
-	return result.Text(string(out)), nil
+	}
+	out, err := json.MarshalIndent(payload, "", "  ")
+	if err != nil {
+		return nil, fmt.Errorf("marshal volume list: %w", err)
+	}
+	return result.TextStructuredUI(string(out), payload, "ui://docker-desktop/volumes"), nil
 }
 
 // VolumeCreate creates a new named volume.

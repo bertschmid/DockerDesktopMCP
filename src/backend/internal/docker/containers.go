@@ -17,6 +17,8 @@ import (
 	"docker-mcp/internal/result"
 )
 
+const containerIDRequiredError = "id is required"
+
 // ContainerList lists containers.
 func (c *Client) ContainerList(ctx context.Context, all bool) (*result.CallToolResult, error) {
 	containers, err := c.cli.ContainerList(ctx, container.ListOptions{All: all})
@@ -55,14 +57,21 @@ func (c *Client) ContainerList(ctx context.Context, all bool) (*result.CallToolR
 		})
 	}
 
-	out, _ := json.MarshalIndent(rows, "", "  ")
-	return result.Text(string(out)), nil
+	out, err := json.MarshalIndent(rows, "", "  ")
+	if err != nil {
+		return nil, fmt.Errorf("marshal container list: %w", err)
+	}
+	return result.TextStructuredUI(
+		string(out),
+		map[string]any{"containers": rows},
+		"ui://docker-desktop/containers",
+	), nil
 }
 
 // ContainerInspect returns detailed info about a container.
 func (c *Client) ContainerInspect(ctx context.Context, id string) (*result.CallToolResult, error) {
 	if id == "" {
-		return nil, fmt.Errorf("id is required")
+		return nil, fmt.Errorf(containerIDRequiredError)
 	}
 	info, _, err := c.cli.ContainerInspectWithRaw(ctx, id, false)
 	if err != nil {
@@ -75,7 +84,7 @@ func (c *Client) ContainerInspect(ctx context.Context, id string) (*result.CallT
 // ContainerStart starts a container.
 func (c *Client) ContainerStart(ctx context.Context, id string) (*result.CallToolResult, error) {
 	if id == "" {
-		return nil, fmt.Errorf("id is required")
+		return nil, fmt.Errorf(containerIDRequiredError)
 	}
 	if err := c.cli.ContainerStart(ctx, id, container.StartOptions{}); err != nil {
 		return nil, err
@@ -86,7 +95,7 @@ func (c *Client) ContainerStart(ctx context.Context, id string) (*result.CallToo
 // ContainerStop stops a container.
 func (c *Client) ContainerStop(ctx context.Context, id string, timeout int) (*result.CallToolResult, error) {
 	if id == "" {
-		return nil, fmt.Errorf("id is required")
+		return nil, fmt.Errorf(containerIDRequiredError)
 	}
 	stopOptions := container.StopOptions{Timeout: &timeout}
 	if err := c.cli.ContainerStop(ctx, id, stopOptions); err != nil {
@@ -98,7 +107,7 @@ func (c *Client) ContainerStop(ctx context.Context, id string, timeout int) (*re
 // ContainerRestart restarts a container.
 func (c *Client) ContainerRestart(ctx context.Context, id string, timeout int) (*result.CallToolResult, error) {
 	if id == "" {
-		return nil, fmt.Errorf("id is required")
+		return nil, fmt.Errorf(containerIDRequiredError)
 	}
 	stopOptions := container.StopOptions{Timeout: &timeout}
 	if err := c.cli.ContainerRestart(ctx, id, stopOptions); err != nil {
@@ -110,7 +119,7 @@ func (c *Client) ContainerRestart(ctx context.Context, id string, timeout int) (
 // ContainerRemove removes a container.
 func (c *Client) ContainerRemove(ctx context.Context, id string, force, removeVolumes bool) (*result.CallToolResult, error) {
 	if id == "" {
-		return nil, fmt.Errorf("id is required")
+		return nil, fmt.Errorf(containerIDRequiredError)
 	}
 	err := c.cli.ContainerRemove(ctx, id, container.RemoveOptions{
 		Force:         force,
@@ -125,7 +134,7 @@ func (c *Client) ContainerRemove(ctx context.Context, id string, force, removeVo
 // ContainerLogs returns logs for a container.
 func (c *Client) ContainerLogs(ctx context.Context, id, tail string, timestamps bool, since string) (*result.CallToolResult, error) {
 	if id == "" {
-		return nil, fmt.Errorf("id is required")
+		return nil, fmt.Errorf(containerIDRequiredError)
 	}
 	opts := container.LogsOptions{
 		ShowStdout: true,
@@ -163,7 +172,7 @@ func (c *Client) ContainerLogs(ctx context.Context, id, tail string, timestamps 
 // ContainerExec runs a command in a container and returns stdout+stderr.
 func (c *Client) ContainerExec(ctx context.Context, id, command, user, workdir string) (*result.CallToolResult, error) {
 	if id == "" {
-		return nil, fmt.Errorf("id is required")
+		return nil, fmt.Errorf(containerIDRequiredError)
 	}
 	if command == "" {
 		return nil, fmt.Errorf("command is required")
@@ -221,7 +230,7 @@ func (c *Client) ContainerExec(ctx context.Context, id, command, user, workdir s
 // ContainerStats returns current resource usage for a container.
 func (c *Client) ContainerStats(ctx context.Context, id string) (*result.CallToolResult, error) {
 	if id == "" {
-		return nil, fmt.Errorf("id is required")
+		return nil, fmt.Errorf(containerIDRequiredError)
 	}
 	resp, err := c.cli.ContainerStats(ctx, id, false)
 	if err != nil {
@@ -343,29 +352,40 @@ func splitCommand(cmd string) []string {
 	inQuote := false
 	quoteChar := byte(0)
 
+	flushCurrent := func() {
+		if current.Len() == 0 {
+			return
+		}
+		args = append(args, current.String())
+		current.Reset()
+	}
+
+	handleOutsideQuote := func(ch byte) {
+		switch ch {
+		case '"', '\'':
+			inQuote = true
+			quoteChar = ch
+		case ' ', '\t':
+			flushCurrent()
+		default:
+			current.WriteByte(ch)
+		}
+	}
+
 	for i := 0; i < len(cmd); i++ {
 		ch := cmd[i]
 		if inQuote {
 			if ch == quoteChar {
 				inQuote = false
-			} else {
-				current.WriteByte(ch)
+				continue
 			}
-		} else if ch == '"' || ch == '\'' {
-			inQuote = true
-			quoteChar = ch
-		} else if ch == ' ' || ch == '\t' {
-			if current.Len() > 0 {
-				args = append(args, current.String())
-				current.Reset()
-			}
-		} else {
 			current.WriteByte(ch)
+			continue
 		}
+		handleOutsideQuote(ch)
 	}
-	if current.Len() > 0 {
-		args = append(args, current.String())
-	}
+
+	flushCurrent()
 	return args
 }
 

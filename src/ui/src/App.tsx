@@ -111,7 +111,12 @@ const TOOL_GROUPS: Array<{
       'docker_system_info',
       'docker_system_version',
       'docker_system_df',
-      'docker_system_prune',
+      'docker_system_prune_all',
+      'docker_system_prune_containers',
+      'docker_system_prune_images',
+      'docker_system_prune_networks',
+      'docker_system_prune_build_cache',
+      'docker_system_prune_volumes',
     ],
   },
 ];
@@ -232,10 +237,9 @@ export function App() {
           <Paper variant="outlined" sx={{ p: 2, height: '100%' }}>
             <Stack
               direction="row"
-              justifyContent="space-between"
-              alignItems="flex-start"
+              sx={{ justifyContent: 'space-between', alignItems: 'flex-start' }}
             >
-              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+              <Typography variant="subtitle1" sx={{ fontWeight: 600 }} gutterBottom>
                 Server Status
               </Typography>
               <Tooltip title="Refresh status">
@@ -255,10 +259,10 @@ export function App() {
               </Tooltip>
             </Stack>
 
-            <Stack direction="row" spacing={1.5} alignItems="center">
+            <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
               <StatusIcon status={status} />
               <Box>
-                <Typography variant="body1" fontWeight={500}>
+                <Typography variant="body1" sx={{ fontWeight: 500 }}>
                   {statusLabel(status)}
                 </Typography>
                 {status === 'running' && (
@@ -285,7 +289,7 @@ export function App() {
         {/* ── Quick Start ───────────────────────────────────────────── */}
         <Grid size={{ xs: 12, md: 6 }}>
           <Paper variant="outlined" sx={{ p: 2, height: '100%' }}>
-            <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600 }} gutterBottom>
               Quick Start
             </Typography>
             <Stack spacing={0.5}>
@@ -308,11 +312,9 @@ export function App() {
       <Paper variant="outlined" sx={{ p: 2 }}>
         <Stack
           direction="row"
-          justifyContent="space-between"
-          alignItems="center"
-          sx={{ mb: 1 }}
+          sx={{ mb: 1, justifyContent: 'space-between', alignItems: 'center' }}
         >
-          <Typography variant="subtitle1" fontWeight={600}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
             Client Configuration
           </Typography>
           <Tooltip title={copied ? 'Copied!' : 'Copy to clipboard'}>
@@ -349,7 +351,7 @@ export function App() {
 
       {/* ── Available Tools ───────────────────────────────────────────────── */}
       <Paper variant="outlined" sx={{ p: 2 }}>
-        <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+        <Typography variant="subtitle1" sx={{ fontWeight: 600 }} gutterBottom>
           Available Tools ({TOTAL_TOOLS})
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -366,7 +368,7 @@ export function App() {
               >
                 {group.label} ({group.tools.length})
               </Typography>
-              <Stack direction="row" flexWrap="wrap" gap={1}>
+              <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 1 }}>
                 {group.tools.map((tool) => (
                   <Chip
                     key={tool}
